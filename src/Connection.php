@@ -2,7 +2,9 @@
 
 namespace tonimareta\moodle;
 
+use Yii;
 use yii\base\InvalidConfigException;
+use yii\base\InvalidParamException;
 use yii\base\Model;
 use yii\httpclient\Client;
 use yii\httpclient\CurlTransport;
@@ -17,12 +19,12 @@ class Connection extends Model
     /**
      * @var string
      */
-    public string $url;
+    public string $url = '';
 
     /**
      * @var string
      */
-    public string $token;
+    public string $token = '';
 
     /**
      * @var string
@@ -50,18 +52,6 @@ class Connection extends Model
     protected Client $client;
 
     /**
-     * @return mixed
-     */
-    public static function connect(string $function, array $params = [], string $method = 'post'): mixed
-    {
-        return (new static())
-            ->setFunction($function)
-            ->setMethod($method)
-            ->setParams($params)
-            ->send();
-    }
-
-    /**
      * @return void
      * @throws InvalidConfigException
      */
@@ -73,12 +63,7 @@ class Connection extends Model
             throw new InvalidConfigException('The "url" or "token" property must be set in web config.');
         }
 
-        $this->url = preg_replace('/\/$/', '', $this->url);
-
-        $this->client = new Client([
-            'baseUrl' => $this->buildBaseUrl(),
-            'transport' => CurlTransport::class,
-        ]);
+        $this->client = new Client(['baseUrl' => $this->url]);
     }
 
     /**
@@ -88,6 +73,8 @@ class Connection extends Model
     public function send(): mixed
     {
         $data = $this->getData();
+        $this->checkException($data);
+
         return $this->prepareData($data);
     }
 
@@ -101,6 +88,10 @@ class Connection extends Model
         return $this;
     }
 
+    /**
+     * @param string $method
+     * @return $this
+     */
     public function setMethod(string $method): static
     {
         $this->method = trim(strtoupper($method));
@@ -114,18 +105,22 @@ class Connection extends Model
     public function setParams(array $params): static
     {
         $this->params = $params;
-        $this->params['wsfunction'] = $this->function;
         return $this;
     }
 
     /**
      * @return string
      */
-    protected function buildBaseUrl(): string
+    protected function buildFullUrl(): string
     {
-        return $this->url . self::REQUEST_URI . '?' . $this->buildQueryString([
+        if (!$this->function) {
+            throw new InvalidParamException('The "function" property can not be empty. Use setFunction("function") method.');
+        }
+
+        return self::REQUEST_URI . '?' . $this->buildQueryString([
             'wstoken' => $this->token,
             'moodlewsrestformat' => $this->format,
+            'wsfunction' => $this->function,
         ]);
     }
 
@@ -143,7 +138,7 @@ class Connection extends Model
      * @return $this
      * @throws HttpException
      */
-    protected function findException(array $data): static
+    protected function checkException(array $data): static
     {
         if (!empty($data['exception'])) {
             throw new HttpException(500, implode(PHP_EOL, $data));
@@ -175,11 +170,12 @@ class Connection extends Model
      */
     protected function makeRequest(): Request
     {
-        $url = $this->buildQueryString($this->params);
+        $url = $this->buildFullUrl();
 
         return $this->client->createRequest()
             ->setUrl($url)
-            ->setMethod($this->method);
+            ->setMethod($this->method)
+            ->setData($this->params);
     }
 
     /**

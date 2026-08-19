@@ -34,3 +34,87 @@ Add to `components` section in `config/web.php`:
     'format' => 'json' // or xml (optional, default: json)
 ],
 ```
+
+## Table of Contents
+1. [Moodle Course](#moodle-course)
+
+## Moodle Course
+```php
+use tonimareta\moodle\models\MoodleCourse;
+```
+
+### Model Structure
+```php
+ * @property int $id
+ * @property string $fullname
+ * @property string $displayname
+ * @property string $shortname
+ * @property string $courseimage
+ * @property int $categoryid
+ * @property string $categoryname
+ * @property int $sortorder
+ * @property string $summary
+ * @property int $summaryformat
+ * @property array $summaryfiles
+ * @property array $overviewfiles
+ * @property string $showactivitydates
+ * @property string $showcompletionconditions
+ * @property array $contacts
+ * @property array $enrollmentmethods
+ * @property array $customfields
+ * @property string $idnumber
+ * @property string $format
+ * @property int $showgrades
+ * @property int $newsitems
+ * @property int $startdate
+ * @property int $enddate
+ * @property int $maxbytes
+ * @property int $showreports
+ * @property int $visible
+ * @property int $groupmode
+ * @property int $groupmodeforce
+ * @property int $defaultgroupingid
+ * @property int $enablecompletion
+ * @property int $completionnotify
+ * @property string $lang
+ * @property string $theme
+ * @property int $marker
+ * @property int $legacyfiles
+ * @property string $calendartype
+ * @property int $timecreated
+ * @property int $timemodified
+ * @property int $requested
+ * @property int $cacherev
+ * @property array $filters
+ * @property array $courseformatoptions
+```
+
+### Get course by id
+```php
+MoodleCourse::getById(int $id): MoodleCourse;
+```
+
+### Get courses by ids
+```php
+MoodleCourse::getByIds(array $ids): MoodleCourse[];
+```
+
+### Get course by shortname
+```php
+MoodleCourse::getByShortname(string $shortname): MoodleCourse;
+```
+
+### Get course by idnumber
+```php
+MoodleCourse::getByIdNumber(int $idNumber): MoodleCourse;
+```
+
+### Get courses for category
+```php
+MoodleCourse::getByCategory(int $category): MoodleCourse[];
+```
+
+### Search courses by name
+```php
+MoodleCourse::searchByName(string $name): MoodleCourse[];
+```
