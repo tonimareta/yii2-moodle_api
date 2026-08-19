@@ -1,0 +1,31 @@
+{
+    "name": "tonimareta/moodle",
+    "description": "Yii2 Moodle API",
+    "type": "yii2-extension",
+    "minimum-stability": "stable",
+    "authors": [
+        {
+            "name": "Anton Mareta",
+            "email": "tonimareta6791@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "yiisoft/yii2": ">=2.0.45",
+        "yiisoft/yii2-httpclient": ">=2.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "tonimareta\\redmine\\": "src/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ]
+}
