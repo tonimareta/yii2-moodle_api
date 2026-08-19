@@ -2,6 +2,8 @@
 
 Contains models for working with the Moodle web services.
 
+To enable web services in your Moodle installation use [official documentation](https://docs.moodle.org/500/en/Using_web_services)
+
 ## Configuration
 
 Add to `composer.json`:

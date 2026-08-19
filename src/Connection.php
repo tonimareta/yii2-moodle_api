@@ -32,7 +32,7 @@ class Connection extends Model
     /**
      * @var string
      */
-    public string $method = 'POST';
+    public string $method = 'post';
 
     /**
      * @var string
@@ -48,6 +48,18 @@ class Connection extends Model
      * @var Client
      */
     protected Client $client;
+
+    /**
+     * @return mixed
+     */
+    public static function connect(string $function, array $params = [], string $method = 'post'): mixed
+    {
+        return (new static())
+            ->setFunction($function)
+            ->setMethod($method)
+            ->setParams($params)
+            ->send();
+    }
 
     /**
      * @return void
@@ -67,14 +79,6 @@ class Connection extends Model
             'baseUrl' => $this->buildBaseUrl(),
             'transport' => CurlTransport::class,
         ]);
-    }
-
-    /**
-     * @return $this
-     */
-    public static function connect(string $function, array $params = []): static
-    {
-        return (new static())->setFunction($function)->setParams($params)->send();
     }
 
     /**
