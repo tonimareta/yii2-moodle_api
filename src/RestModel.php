@@ -4,41 +4,9 @@ namespace tonimareta\moodle;
 
 use Yii;
 use yii\base\InvalidConfigException;
-use yii\base\Model;
 
 class RestModel extends Model
 {
-    /**
-     * @param string $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        $attributes = array_merge_recursive(
-            array_fill_keys($this->attributes(), null),
-            array_fill_keys($this->extraFields(), null),
-        );
-
-        if (!array_key_exists($name, $attributes)) {
-            return parent::__get($name);
-        }
-
-        return $attributes[$name];
-    }
-
-    /**
-     * @param string $name
-     * @param mixed $value
-     */
-    public function __set($name, $value)
-    {
-        if (!in_array($name, $this->attributes()) && !in_array($name, $this->extraFields())) {
-            parent::__set($name, $value);
-        } else {
-            $this->$name = $value;
-        }
-    }
-
     /**
      * @param string $function
      * @param array $params
@@ -55,33 +23,6 @@ class RestModel extends Model
     }
 
     /**
-     * @param array $data
-     * @return static
-     */
-    public static function loadData(array $data): static
-    {
-        $model = new static($data);
-        $attributes = $model->attributes();
-
-        foreach ($attributes as $property) {
-            if (empty($model->$property)) {
-                $model->$property = null;
-            }
-        }
-
-        return $model;
-    }
-
-    /**
-     * @param array $dataset
-     * @return static[]
-     */
-    public static function loadDataMultiple(array $dataset): array
-    {
-        return array_map(fn ($data) => static::loadData($data), $dataset);
-    }
-
-    /**
      * @return Connection
      * @throws InvalidConfigException
      */
@@ -92,5 +33,23 @@ class RestModel extends Model
         }
 
         return Yii::$app->get('moodleAPI');
+    }
+
+    /**
+     * @param array $data
+     * @return static
+     */
+    public static function loadData(array $data): static
+    {
+        return new static($data);
+    }
+
+    /**
+     * @param array $dataset
+     * @return static[]
+     */
+    public static function loadDataMultiple(array $dataset): array
+    {
+        return array_map(fn ($data) => static::loadData($data), $dataset);
     }
 }

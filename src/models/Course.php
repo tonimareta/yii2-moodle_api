@@ -2,7 +2,15 @@
 
 namespace tonimareta\moodle\models;
 
+use tonimareta\moodle\objects\Contact;
+use tonimareta\moodle\objects\CourseFilter;
+use tonimareta\moodle\objects\CourseSection;
+use tonimareta\moodle\objects\CustomField;
+use tonimareta\moodle\objects\File;
+use tonimareta\moodle\options\CourseContentOption;
+use tonimareta\moodle\options\CourseFormatOption;
 use tonimareta\moodle\RestModel;
+use yii\helpers\ArrayHelper;
 
 /**
  * @property int $id
@@ -15,13 +23,13 @@ use tonimareta\moodle\RestModel;
  * @property int $sortorder
  * @property string $summary
  * @property int $summaryformat
- * @property array $summaryfiles
- * @property array $overviewfiles
+ * @property File[] $summaryfiles
+ * @property File[] $overviewfiles
  * @property string $showactivitydates
  * @property string $showcompletionconditions
- * @property array $contacts
+ * @property Contact[] $contacts
  * @property array $enrollmentmethods
- * @property array $customfields
+ * @property CustomField[] $customfields
  * @property string $idnumber
  * @property string $format
  * @property int $showgrades
@@ -45,10 +53,12 @@ use tonimareta\moodle\RestModel;
  * @property int $timemodified
  * @property int $requested
  * @property int $cacherev
- * @property array $filters
- * @property array $courseformatoptions
+ * @property CourseFilter[] $filters
+ * @property CourseFormatOption $courseformatoptions
+ * @property string $communicationroomname
+ * @property string $communicationroomurl
  */
-class MoodleCourse extends RestModel
+class Course extends RestModel
 {
     /**
      * @return string[]
@@ -98,12 +108,14 @@ class MoodleCourse extends RestModel
             'cacherev',
             'filters',
             'courseformatoptions',
+            'communicationroomname',
+            'communicationroomurl',
         ];
     }
 
     /**
      * @param int $categoryId
-     * @return MoodleCourse[]
+     * @return Course[]
      */
     public static function getByCategory(int $categoryId): array
     {
@@ -114,7 +126,7 @@ class MoodleCourse extends RestModel
      * @param string $field
      * @param int|string $value
      * @param bool $reset
-     * @return MoodleCourse[]
+     * @return Course[]
      */
     public static function getByField(string $field, int|string $value, bool $reset = false): array
     {
@@ -129,7 +141,7 @@ class MoodleCourse extends RestModel
     /**
      * @param string $field
      * @param int|string $value
-     * @return MoodleCourse|null
+     * @return Course|null
      */
     public static function getByFieldOne(string $field, int|string $value): ?static
     {
@@ -139,7 +151,7 @@ class MoodleCourse extends RestModel
 
     /**
      * @param int $id
-     * @return MoodleCourse|null
+     * @return Course|null
      */
     public static function getById(int $id): ?static
     {
@@ -148,7 +160,7 @@ class MoodleCourse extends RestModel
 
     /**
      * @param int $idNumber
-     * @return MoodleCourse|null
+     * @return Course|null
      */
     public static function getByIdNumber(int $idNumber): ?static
     {
@@ -157,7 +169,7 @@ class MoodleCourse extends RestModel
 
     /**
      * @param array $ids
-     * @return MoodleCourse[]
+     * @return Course[]
      */
     public static function getByIds(array $ids): array
     {
@@ -166,7 +178,7 @@ class MoodleCourse extends RestModel
 
     /**
      * @param string $shortname
-     * @return MoodleCourse|null
+     * @return Course|null
      */
     public static function getByShortname(string $shortname): ?static
     {
@@ -174,8 +186,31 @@ class MoodleCourse extends RestModel
     }
 
     /**
+     * @param CourseContentOption|null $options
+     * @return CourseSection[]
+     */
+    public function getContent(?CourseContentOption $options = null): array
+    {
+        if (!$this->id) {
+            return [];
+        }
+
+        $conditions = ['courseid' => $this->id];
+
+        if (!is_null($options)) {
+            $conditions = ArrayHelper::merge($conditions, $options->getItems());
+        }
+
+        if (!$data = static::connect('core_course_get_contents', $conditions)) {
+            return [];
+        }
+
+        return array_map(fn($section) => new CourseSection($section), $data);
+    }
+
+    /**
      * @param array $dataset
-     * @return MoodleCourse[]
+     * @return Course[]
      */
     public static function loadDataMultiple(array $dataset): array
     {
@@ -189,7 +224,7 @@ class MoodleCourse extends RestModel
 
     /**
      * @param string $name
-     * @return MoodleCourse[]
+     * @return Course[]
      */
     public static function searchByName(string $name): array
     {
@@ -199,5 +234,18 @@ class MoodleCourse extends RestModel
         ]);
 
         return static::loadDataMultiple($courses);
+    }
+
+    /**
+     * @return array
+     */
+    protected function relations(): array
+    {
+        return [
+            'summaryfiles' => File::class,
+            'overviewfiles' => File::class,
+            'filters' => CourseFilter::class,
+            'courseformatoptions' => CourseFormatOption::class,
+        ];
     }
 }
