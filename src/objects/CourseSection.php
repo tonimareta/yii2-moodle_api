@@ -3,6 +3,7 @@
 namespace tonimareta\moodle\objects;
 
 use tonimareta\moodle\Model;
+use tonimareta\moodle\models\CourseModule;
 
 /**
  * @property int $id

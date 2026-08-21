@@ -1,8 +1,15 @@
 <?php
 
-namespace tonimareta\moodle\objects;
+namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\Model;
+use tonimareta\moodle\objects\ActivityBadge;
+use tonimareta\moodle\objects\AdvancedGrading;
+use tonimareta\moodle\objects\CompletionData;
+use tonimareta\moodle\objects\File;
+use tonimareta\moodle\objects\FileInfo;
+use tonimareta\moodle\objects\MoodleDate;
+use tonimareta\moodle\objects\Outcome;
+use tonimareta\moodle\RestModel;
 
 /**
  * @property int $id
@@ -14,9 +21,16 @@ use tonimareta\moodle\Model;
  * @property int $visible
  * @property int $uservisible
  * @property string $availabilityinfo
+ * @property int $visibleold
  * @property int $visibleoncoursepage
+ * @property int $showdescription
+ * @property int $course
+ * @property int $section
+ * @property int $sectionnum
+ * @property int $module
  * @property string $modicon
  * @property string $modname
+ * @property string $idnumber
  * @property string $purpose
  * @property int $branded
  * @property string $modplural
@@ -30,13 +44,24 @@ use tonimareta\moodle\Model;
  * @property int $candisplay
  * @property int $completion
  * @property CompletionData $completiondata
+ * @property int $completiongradeitemnumber
+ * @property int $completionpassgrade
+ * @property int $completionview
+ * @property int $completionexpected
  * @property int $downloadcontent
  * @property MoodleDate[] $dates
  * @property int $groupmode
+ * @property int $groupingid
  * @property File[] $contents
  * @property FileInfo $contentsinfo
+ * @property int $added
+ * @property int $score
+ * @property string $gradepass
+ * @property int $gradecat
+ * @property AdvancedGrading[] $advancedgrading
+ * @property Outcome[] $outcomes
  */
-class CourseModule extends Model
+class CourseModule extends RestModel
 {
     /**
      * @return string[]
@@ -53,9 +78,16 @@ class CourseModule extends Model
             'visible',
             'uservisible',
             'availabilityinfo',
+            'visibleold',
             'visibleoncoursepage',
+            'showdescription',
+            'course',
+            'section',
+            'sectionnum',
+            'module',
             'modicon',
             'modname',
+            'idnumber',
             'purpose',
             'branded',
             'modplural',
@@ -69,12 +101,37 @@ class CourseModule extends Model
             'candisplay',
             'completion',
             'completiondata',
+            'completiongradeitemnumber',
+            'completionpassgrade',
+            'completionview',
+            'completionexpected',
             'downloadcontent',
             'dates',
             'groupmode',
+            'groupingid',
             'contents',
             'contentsinfo',
+            'added',
+            'score',
+            'gradepass',
+            'gradecat',
+            'advancedgrading',
+            'outcomes',
         ];
+    }
+
+    /**
+     * @param int $id
+     * @return static|null
+     */
+    public static function getById(int $id): ?static
+    {
+        if (!$module = static::connect('core_course_get_course_module', ['cmid' => $id])) {
+            return null;
+        }
+
+        $module = $module['cm'] ?? $module;
+        return new static($module);
     }
 
     /**
@@ -88,6 +145,8 @@ class CourseModule extends Model
             'dates' => MoodleDate::class,
             'contents' => File::class,
             'contentsinfo' => FileInfo::class,
+            'advancedgrading' => AdvancedGrading::class,
+            'outcomes' => Outcome::class,
         ];
     }
 }

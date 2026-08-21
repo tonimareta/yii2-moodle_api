@@ -37,19 +37,15 @@ class RestModel extends Model
 
     /**
      * @param array $data
-     * @return static
-     */
-    public static function loadData(array $data): static
-    {
-        return new static($data);
-    }
-
-    /**
-     * @param array $dataset
+     * @param string|null $formId
      * @return static[]
      */
-    public static function loadDataMultiple(array $dataset): array
+    public static function loadData(array $data, ?string $formId = null): array
     {
-        return array_map(fn ($data) => static::loadData($data), $dataset);
+        if ($formId && !empty($data[$formId])) {
+            $data = $data[$formId];
+        }
+
+        return array_map(fn ($data) => new static($data), $data);
     }
 }

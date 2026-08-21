@@ -37,14 +37,15 @@ Add to `components` section in `config/web.php`:
 
 ## Table of Contents
 1. [REST Models](#rest-models)
-   - [Moodle Course](#moodle-course)
+   - [Course](#course)
+   - [Course Module](#course-module)
 2. [Responses](#responses)
    - [Models](#models)
    - [Objects](#objects)
    - [Options](#options)
 
 # REST Models
-## Moodle Course
+## Course
 
 ```php
 use tonimareta\moodle\models\Course;
@@ -90,6 +91,17 @@ Course::searchByName(string $name): Course[];
 // Moodle web service function: core_course_get_contents
 $course = Course::getById($id);
 $course->getContent(?CourseContentOption $options = null): CourseSection[]
+```
+
+## Course Module
+
+```php
+use tonimareta\moodle\models\CourseModule;
+```
+
+### Get course module by id
+```php
+CourseModule::getById(int $id): CourseModule;
 ```
 
 # Responses
@@ -142,6 +154,58 @@ $course->getContent(?CourseContentOption $options = null): CourseSection[]
  * @property string $communicationroomurl
 ```
 
+### Course Module
+```php
+ * @property int $id
+ * @property string $url
+ * @property string $name
+ * @property int $instance
+ * @property int $contextid
+ * @property string $description
+ * @property int $visible
+ * @property int $uservisible
+ * @property string $availabilityinfo
+ * @property int $visibleold
+ * @property int $visibleoncoursepage
+ * @property int $showdescription
+ * @property int $course
+ * @property int $section
+ * @property int $sectionnum
+ * @property int $module
+ * @property string $modicon
+ * @property string $modname
+ * @property string $idnumber
+ * @property string $purpose
+ * @property int $branded
+ * @property string $modplural
+ * @property string $availability
+ * @property int $indent
+ * @property string $onclick
+ * @property string $afterlink
+ * @property ActivityBadge[] $activitybadge
+ * @property string $customdata
+ * @property int $noviewlink
+ * @property int $candisplay
+ * @property int $completion
+ * @property CompletionData $completiondata
+ * @property int $completiongradeitemnumber
+ * @property int $completionpassgrade
+ * @property int $completionview
+ * @property int $completionexpected
+ * @property int $downloadcontent
+ * @property MoodleDate[] $dates
+ * @property int $groupmode
+ * @property int $groupingid
+ * @property File[] $contents
+ * @property FileInfo $contentsinfo
+ * @property int $added
+ * @property int $score
+ * @property string $gradepass
+ * @property int $gradecat
+ * @property AdvancedGrading[] $advancedgrading
+ * @property Outcome[] $outcomes
+```
+
 ## Objects
 ### Course Section
 ```php
@@ -159,40 +223,6 @@ $course->getContent(?CourseContentOption $options = null): CourseSection[]
  * @property CourseModule[] $modules
 ```
 
-### Course Module
-```php
- * @property int $id
- * @property string $url
- * @property string $name
- * @property int $instance
- * @property int $contextid
- * @property string $description
- * @property int $visible
- * @property int $uservisible
- * @property string $availabilityinfo
- * @property int $visibleoncoursepage
- * @property string $modicon
- * @property string $modname
- * @property string $purpose
- * @property int $branded
- * @property string $modplural
- * @property string $availability
- * @property int $indent
- * @property string $onclick
- * @property string $afterlink
- * @property ActivityBadge[] $activitybadge
- * @property string $customdata
- * @property int $noviewlink
- * @property int $candisplay
- * @property int $completion
- * @property CompletionData $completiondata
- * @property int $downloadcontent
- * @property MoodleDate[] $dates
- * @property int $groupmode
- * @property File[] $contents
- * @property FileInfo $contentsinfo
-```
-
 ### ActivityBadge
 ```php
  * @property string $badgecontent
@@ -200,6 +230,12 @@ $course->getContent(?CourseContentOption $options = null): CourseSection[]
  * @property string $badgeurl
  * @property string $badgeelementid
  * @property BadgeExtraAttributesOption[] $badgeextraattributes
+```
+
+### AdvancedGrading
+```php
+ * @property string $area
+ * @property string $method
 ```
 
 ### BadgeExtraAttribute
@@ -232,6 +268,28 @@ $course->getContent(?CourseContentOption $options = null): CourseSection[]
 ```php
  * @property int $status
  * @property string $description
+```
+
+### Contact
+```php
+ * @property int $id
+ * @property string $fullname
+```
+
+### CourseFilter
+```php
+ * @property string $filter
+ * @property int $localstate
+ * @property int $inheritedstate
+```
+
+### CustomField
+```php
+ * @property string $name
+ * @property string $shortname
+ * @property string $type
+ * @property string $valueraw
+ * @property string $value
 ```
 
 ### File
@@ -279,34 +337,19 @@ $course->getContent(?CourseContentOption $options = null): CourseSection[]
  * @property string $viewurl
 ```
 
-### Contact
-```php
- * @property int $id
- * @property string $fullname
-```
-
-### CustomField
-```php
- * @property string $name
- * @property string $shortname
- * @property string $type
- * @property string $valueraw
- * @property string $value
-```
-
-### CourseFilter
-```php
- * @property string $filter
- * @property int $localstate
- * @property int $inheritedstate
-```
-
 ### MoodleDate
 ```php
  * @property string $label
  * @property int $timestamp
  * @property int $relativeto
  * @property string $dataid
+```
+
+### Outcome
+```php
+ * @property string $id
+ * @property string $name
+ * @property string $scale
 ```
 
 ## Options

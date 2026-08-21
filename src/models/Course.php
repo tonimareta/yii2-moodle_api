@@ -135,7 +135,7 @@ class Course extends RestModel
             'value' => $value,
         ]);
 
-        return static::loadDataMultiple($courses);
+        return static::loadData($courses, 'courses');
     }
 
     /**
@@ -209,20 +209,6 @@ class Course extends RestModel
     }
 
     /**
-     * @param array $dataset
-     * @return Course[]
-     */
-    public static function loadDataMultiple(array $dataset): array
-    {
-        if (empty($dataset)) {
-            return [];
-        }
-
-        $dataset = $dataset['courses'] ?? $dataset;
-        return parent::loadDataMultiple($dataset);
-    }
-
-    /**
      * @param string $name
      * @return Course[]
      */
@@ -233,7 +219,7 @@ class Course extends RestModel
             'criteriavalue' => $name,
         ]);
 
-        return static::loadDataMultiple($courses);
+        return static::loadData($courses, 'courses');
     }
 
     /**
