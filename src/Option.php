@@ -5,14 +5,12 @@ namespace tonimareta\moodle;
 class Option extends Model
 {
     /**
-     * @var string
+     * @return string[]
      */
-    public string $name = '';
-
-    /**
-     * @var mixed|null
-     */
-    public mixed $value = null;
+    public static function keys(): array
+    {
+        return ['name', 'value'];
+    }
 
     /**
      * @return array
@@ -21,11 +19,16 @@ class Option extends Model
     {
         $options = [];
         $data = $this->toArray();
+        list($keyName, $keyValue) = static::keys();
 
         foreach ($data as $name => $value) {
+            if (is_null($value)) {
+                continue;
+            }
+
             $options[] = [
-                'name' => $name,
-                'value' => $value,
+                $keyName => $name,
+                $keyValue => $value,
             ];
         }
 

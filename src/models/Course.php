@@ -4,7 +4,6 @@ namespace tonimareta\moodle\models;
 
 use tonimareta\moodle\objects\Contact;
 use tonimareta\moodle\objects\CourseFilter;
-use tonimareta\moodle\objects\CourseSection;
 use tonimareta\moodle\objects\CustomField;
 use tonimareta\moodle\objects\File;
 use tonimareta\moodle\options\CourseContentOption;
@@ -123,33 +122,6 @@ class Course extends RestModel
     }
 
     /**
-     * @param string $field
-     * @param int|string $value
-     * @param bool $reset
-     * @return Course[]
-     */
-    public static function getByField(string $field, int|string $value, bool $reset = false): array
-    {
-        $courses = static::connect('core_course_get_courses_by_field', [
-            'field' => $field,
-            'value' => $value,
-        ]);
-
-        return static::loadData($courses, 'courses');
-    }
-
-    /**
-     * @param string $field
-     * @param int|string $value
-     * @return Course|null
-     */
-    public static function getByFieldOne(string $field, int|string $value): ?static
-    {
-        $courses = static::getByField($field, $value);
-        return $courses[0] ?? null;
-    }
-
-    /**
      * @param int $id
      * @return Course|null
      */
@@ -183,6 +155,18 @@ class Course extends RestModel
     public static function getByShortname(string $shortname): ?static
     {
         return static::getByFieldOne('shortname', $shortname);
+    }
+
+    /**
+     * @return CourseCategory|null
+     */
+    public function getCategory(): ?CourseCategory
+    {
+        if (!$this->categoryid) {
+            return null;
+        }
+
+        return CourseCategory::getById($this->categoryid);
     }
 
     /**
@@ -220,6 +204,33 @@ class Course extends RestModel
         ]);
 
         return static::loadData($courses, 'courses');
+    }
+
+    /**
+     * @param string $field
+     * @param int|string $value
+     * @param bool $reset
+     * @return Course[]
+     */
+    protected static function getByField(string $field, int|string $value, bool $reset = false): array
+    {
+        $courses = static::connect('core_course_get_courses_by_field', [
+            'field' => $field,
+            'value' => $value,
+        ]);
+
+        return static::loadData($courses, 'courses');
+    }
+
+    /**
+     * @param string $field
+     * @param int|string $value
+     * @return Course|null
+     */
+    protected static function getByFieldOne(string $field, int|string $value): ?static
+    {
+        $courses = static::getByField($field, $value);
+        return $courses[0] ?? null;
     }
 
     /**

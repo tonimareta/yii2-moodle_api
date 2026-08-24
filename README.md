@@ -35,25 +35,34 @@ Add to `components` section in `config/web.php`:
 ],
 ```
 
+
+## Requirements
+
+* **Moodle Version:** 4.5+
+* **PHP Version:** 8.1+
+
 ## Table of Contents
 1. [REST Models](#rest-models)
    - [Course](#course)
+   - [Course Category](#course-category)
    - [Course Module](#course-module)
+   - [Course Section](#course-section)
 2. [Responses](#responses)
    - [Models](#models)
    - [Objects](#objects)
    - [Options](#options)
+   - [Rules](#rules)
 
 # REST Models
 ## Course
-
 ```php
 use tonimareta\moodle\models\Course;
 ```
 
 ### Get course by id
 ```php
-Course::getById(int $id): Course;
+// Moodle web service function: core_course_get_courses_by_field
+Course::getById(int $id): Course|null;
 ```
 
 ### Get courses by ids
@@ -65,13 +74,13 @@ Course::getByIds(array $ids): Course[];
 ### Get course by shortname
 ```php
 // Moodle web service function: core_course_get_courses_by_field
-Course::getByShortname(string $shortname): Course;
+Course::getByShortname(string $shortname): Course|null;
 ```
 
 ### Get course by idnumber
 ```php
 // Moodle web service function: core_course_get_courses_by_field
-Course::getByIdNumber(int $idNumber): Course;
+Course::getByIdNumber(int $idNumber): Course|null;
 ```
 
 ### Get courses for category
@@ -86,22 +95,142 @@ Course::getByCategory(int $category): Course[];
 Course::searchByName(string $name): Course[];
 ```
 
+### Get course category
+```php
+// Moodle web service function: core_course_get_categories
+$course = Course::getById($id);
+$course->getCategory(): CourseCategory|null;
+```
+
 ### Get course contents (sections with modules)
 ```php
 // Moodle web service function: core_course_get_contents
 $course = Course::getById($id);
-$course->getContent(?CourseContentOption $options = null): CourseSection[]
+$course->getContent(CourseContentOption|null $options = null): CourseSection[];
+```
+
+## Course Category
+```php
+use tonimareta\moodle\models\CourseCategory;
+```
+
+### Get categories by field
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getByField(CategoryCriteriaOption $criteria, bool $addSubCategories = true): CourseCategory[];
+```
+
+### Get category by id
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getById(int $id): CourseCategory|null;
+```
+
+### Get categories by ids
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getByIds(array $ids): CourseCategory[];
+```
+
+### Get categories by name
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getByName(string $name): CourseCategory[];
+```
+
+### Get categories by parent id
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getByParentId(int $parentId): CourseCategory[];
+```
+
+### Get category by idnumber
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getByIdnumber(string $idnumber): CourseCategory|null;
+```
+
+### Get hidden categories
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getHidden(): CourseCategory[];
+```
+
+### Get visible categories
+```php
+// Moodle web service function: core_course_get_categories
+CourseCategory::getVisible(): CourseCategory[];
+```
+
+### Create category
+```php
+// Moodle web service function: core_course_create_categories
+// CategoryCreateRule used for filter params
+$category = new CourseCategory(['name' => $name, 'parent' => $parentId]);
+$category->create(): CourseCategory|null;
+```
+
+### Create categories multiple
+```php
+// Moodle web service function: core_course_create_categories
+// CategoryCreateRule used for filter params
+CourseCategory::createMany([
+    ['name' => $name, 'parent' => $parentId],
+    ['name' => $name2, 'parent' => $parentId2, 'description' => $description2],
+]): CourseCategory[];
+```
+
+### Update category
+```php
+// Moodle web service function: core_course_update_categories
+// CategoryUpdateRule used for filter params
+$category = CourseCategory::getById($id);
+$category->name = $newName;
+$category->update(): bool;
+```
+
+### Update categories multiple
+```php
+// Moodle web service function: core_course_update_categories
+// CategoryUpdateRule used for filter params
+CourseCategory::updateMany([
+    ['id' => $id, 'name' => $name],
+    ['id' => $id2, 'name' => $name2, 'description' => $description2],
+]): bool;
+```
+
+### Delete category
+```php
+// Moodle web service function: core_course_delete_categories
+// CategoryDeleteRule used for filter params
+$category = CourseCategory::getById($id);
+$category->delete(int|null $newParentId = null, bool $recursive = false): bool;
+```
+
+### Delete categories multiple
+```php
+// Moodle web service function: core_course_delete_categories
+// CategoryDeleteRule used for filter params
+CourseCategory::deleteMany([
+    ['id' => $id, 'recursive' => 1],
+    ['id' => $id2, 'newparent' => $parentId],
+]): bool
 ```
 
 ## Course Module
-
 ```php
 use tonimareta\moodle\models\CourseModule;
 ```
 
 ### Get course module by id
 ```php
-CourseModule::getById(int $id): CourseModule;
+// Moodle web service function: core_course_get_course_module
+CourseModule::getById(int $id): CourseModule|null;
+```
+
+## Course Section
+```php
+use tonimareta\moodle\models\CourseSection;
 ```
 
 # Responses
@@ -152,6 +281,24 @@ CourseModule::getById(int $id): CourseModule;
  * @property CourseFormatOption $courseformatoptions
  * @property string $communicationroomname
  * @property string $communicationroomurl
+```
+
+### Course Category
+```php
+ * @property int $id
+ * @property string $name
+ * @property string $idnumber
+ * @property string $description
+ * @property int $descriptionformat
+ * @property int $parent
+ * @property int $sortorder
+ * @property int $coursecount
+ * @property int $visible
+ * @property int $visibleold
+ * @property int $timemodified
+ * @property int $depth
+ * @property string $path
+ * @property string $theme
 ```
 
 ### Course Module
@@ -206,7 +353,6 @@ CourseModule::getById(int $id): CourseModule;
  * @property Outcome[] $outcomes
 ```
 
-## Objects
 ### Course Section
 ```php
  * @property int $id
@@ -223,6 +369,7 @@ CourseModule::getById(int $id): CourseModule;
  * @property CourseModule[] $modules
 ```
 
+## Objects
 ### ActivityBadge
 ```php
  * @property string $badgecontent
@@ -353,16 +500,26 @@ CourseModule::getById(int $id): CourseModule;
 ```
 
 ## Options
+### CategoryCriteriaOption
+```php
+ * @property int $id - the category id
+ * @property string $ids - category ids separated by commas
+ * @property string $name - the category name
+ * @property int $parent - the parent category id
+ * @property string $idnumber - category idnumber - user must have 'moodle/category:manage' to search on idnumber
+ * @property int $visible - whether the returned categories must be visible or hidden
+```
+
 ### CourseContentOption
 ```php
- * @property bool $excludemodules
- * @property bool $excludecontents
- * @property bool $includestealthmodules
- * @property int $sectionid
- * @property int $sectionnumber
- * @property int $cmid
- * @property string $modname
- * @property int $modid
+ * @property bool $excludemodules - Do not return modules, return only the sections structure
+ * @property bool $excludecontents - Do not return module contents (i.e: files inside a resource)
+ * @property bool $includestealthmodules - Return stealth modules for students in a special section (with id -1)
+ * @property int $sectionid - Return only this section
+ * @property int $sectionnumber - Return only this section with number (order)
+ * @property int $cmid - Return only this module information (among the whole sections structure)
+ * @property string $modname - Return only modules with this name "label, forum, etc..."
+ * @property int $modid - Return only the module with this id
 ```
 
 ### CourseFormatOption
@@ -371,3 +528,31 @@ CourseModule::getById(int $id): CourseModule;
  * @property int $coursedisplay
  * @property int $indentation
 ```
+
+## Rules
+### CategoryCreateRule
+```php
+ * @property string $name - category name
+ * @property string $idnumber - category id number
+ * @property int $parent - parent category id
+ * @property string $description - category description
+ * @property int $descriptionformat  - description format (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)
+```
+
+### CategoryDeleteRule
+```php
+ * @property int $id - category id to delete
+ * @property int $newparent - the parent category to move the contents to, if specified
+ * @property int $recursive - recursively delete all contents inside this category or move contents to newParentId
+```
+
+### CategoryUpdateRule
+```php
+ * @property int $id - category id
+ * @property string $name - category name
+ * @property string $idnumber - category id number
+ * @property int $parent - parent category id
+ * @property string $description - category description
+ * @property int $descriptionformat  - description format (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)
+```
+

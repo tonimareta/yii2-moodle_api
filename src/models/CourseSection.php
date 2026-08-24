@@ -1,9 +1,8 @@
 <?php
 
-namespace tonimareta\moodle\objects;
+namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\Model;
-use tonimareta\moodle\models\CourseModule;
+use tonimareta\moodle\RestModel;
 
 /**
  * @property int $id
@@ -19,7 +18,7 @@ use tonimareta\moodle\models\CourseModule;
  * @property int $itemid
  * @property CourseModule[] $modules
  */
-class CourseSection extends Model
+class CourseSection extends RestModel
 {
     /**
      * @return string[]

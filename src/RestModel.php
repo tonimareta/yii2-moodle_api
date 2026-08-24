@@ -4,6 +4,7 @@ namespace tonimareta\moodle;
 
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\httpclient\Exception;
 
 class RestModel extends Model
 {
@@ -15,11 +16,17 @@ class RestModel extends Model
      */
     public static function connect(string $function, array $params = [], string $method = 'post'): mixed
     {
-        return static::db()
-            ->setFunction($function)
-            ->setMethod($method)
-            ->setParams($params)
-            ->send();
+        try {
+            return static::db()
+                ->setFunction($function)
+                ->setMethod($method)
+                ->setParams($params)
+                ->send();
+        } catch (Exception|InvalidConfigException $e) {
+            Yii::error($e->getMessage());
+        }
+
+        return false;
     }
 
     /**

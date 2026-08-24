@@ -68,11 +68,17 @@ class Connection extends Model
 
     /**
      * @return mixed
+     * @throws Exception
      * @throws InvalidConfigException
      */
     public function send(): mixed
     {
         $data = $this->getData();
+
+        if (!is_array($data)) {
+            return true;
+        }
+
         $this->checkException($data);
 
         return $this->prepareData($data);
@@ -136,12 +142,12 @@ class Connection extends Model
     /**
      * @param array $data
      * @return $this
-     * @throws HttpException
+     * @throws Exception
      */
     protected function checkException(array $data): static
     {
         if (!empty($data['exception'])) {
-            throw new HttpException(500, implode(PHP_EOL, $data));
+            throw new Exception(implode(PHP_EOL, $data), 500);
         }
 
         return $this;
@@ -154,7 +160,8 @@ class Connection extends Model
      */
     protected function getData(): mixed
     {
-        $response = $this->makeRequest()->send();
+        $request = $this->makeRequest();
+        $response = $request->send();
         $this->reset();
 
         if (!$response->getIsOk()) {
