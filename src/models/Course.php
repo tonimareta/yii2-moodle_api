@@ -9,7 +9,11 @@ use tonimareta\moodle\objects\File;
 use tonimareta\moodle\options\CourseContentOption;
 use tonimareta\moodle\options\CourseFormatOption;
 use tonimareta\moodle\RestModel;
+use tonimareta\moodle\rules\CourseCreateRule;
+use tonimareta\moodle\rules\CourseUpdateRule;
+use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
+use yii\httpclient\Exception;
 
 /**
  * @property int $id
@@ -24,8 +28,8 @@ use yii\helpers\ArrayHelper;
  * @property int $summaryformat
  * @property File[] $summaryfiles
  * @property File[] $overviewfiles
- * @property string $showactivitydates
- * @property string $showcompletionconditions
+ * @property int $showactivitydates
+ * @property int $showcompletionconditions
  * @property Contact[] $contacts
  * @property array $enrollmentmethods
  * @property CustomField[] $customfields
@@ -115,6 +119,8 @@ class Course extends RestModel
     /**
      * @param int $categoryId
      * @return Course[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByCategory(int $categoryId): array
     {
@@ -124,6 +130,8 @@ class Course extends RestModel
     /**
      * @param int $id
      * @return Course|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getById(int $id): ?static
     {
@@ -133,6 +141,8 @@ class Course extends RestModel
     /**
      * @param int $idNumber
      * @return Course|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByIdNumber(int $idNumber): ?static
     {
@@ -142,6 +152,8 @@ class Course extends RestModel
     /**
      * @param array $ids
      * @return Course[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByIds(array $ids): array
     {
@@ -151,6 +163,8 @@ class Course extends RestModel
     /**
      * @param string $shortname
      * @return Course|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByShortname(string $shortname): ?static
     {
@@ -159,6 +173,8 @@ class Course extends RestModel
 
     /**
      * @return CourseCategory|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public function getCategory(): ?CourseCategory
     {
@@ -172,6 +188,8 @@ class Course extends RestModel
     /**
      * @param CourseContentOption|null $options
      * @return CourseSection[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public function getContent(?CourseContentOption $options = null): array
     {
@@ -195,6 +213,8 @@ class Course extends RestModel
     /**
      * @param string $name
      * @return Course[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function searchByName(string $name): array
     {
@@ -207,10 +227,39 @@ class Course extends RestModel
     }
 
     /**
+     * @return array
+     */
+    public function rules(): array
+    {
+        return [
+            [['id'], 'required', 'on' => self::SCENARIO_UPDATE],
+            [['id'], 'required', 'on' => self::SCENARIO_DELETE],
+            [['fullname', 'shortname', 'categoryid'], 'required', 'on' => self::SCENARIO_CREATE],
+
+            [[
+                'id', 'categoryid', 'sortorder', 'summaryformat', 'showgrades', 'newsitems', 'startdate', 'enddate',
+                'maxbytes', 'showreports', 'visible', 'groupmode', 'groupmodeforce', 'defaultgroupingid',
+                'enablecompletion', 'completionnotify', 'marker', 'legacyfiles', 'timecreated',
+                'timemodified', 'requested', 'cacherev',
+            ], 'integer'],
+            [[
+                'fullname', 'displayname', 'shortname', 'courseimage', 'categoryname', 'summary', 'idnumber', 'format',
+                'lang', 'theme', 'calendartype', 'communicationroomname', 'communicationroomurl',
+            ], 'string'],
+            [[
+                'enrollmentmethods', 'showactivitydates', 'showcompletionconditions', 'contacts', 'customfields',
+                'filters', 'courseformatoptions', 'summaryfiles', 'overviewfiles',
+            ], 'safe'],
+        ];
+    }
+
+    /**
      * @param string $field
      * @param int|string $value
      * @param bool $reset
      * @return Course[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     protected static function getByField(string $field, int|string $value, bool $reset = false): array
     {
@@ -226,6 +275,8 @@ class Course extends RestModel
      * @param string $field
      * @param int|string $value
      * @return Course|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     protected static function getByFieldOne(string $field, int|string $value): ?static
     {
@@ -243,6 +294,20 @@ class Course extends RestModel
             'overviewfiles' => File::class,
             'filters' => CourseFilter::class,
             'courseformatoptions' => CourseFormatOption::class,
+        ];
+    }
+
+    /**
+     * @return array[]
+     */
+    protected function crudRules(): array
+    {
+        $params = $this->toArray();
+
+        return [
+            self::SCENARIO_CREATE => ['core_course_create_courses', ['courses' => [new CourseCreateRule($params)]]],
+            self::SCENARIO_DELETE => ['core_course_delete_courses', ['courseids' => [$this->id]]],
+            self::SCENARIO_UPDATE => ['core_course_update_courses', ['courses' => [new CourseUpdateRule($params)]]],
         ];
     }
 }

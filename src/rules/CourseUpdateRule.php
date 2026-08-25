@@ -5,9 +5,9 @@ namespace tonimareta\moodle\rules;
 use yii\helpers\ArrayHelper;
 
 /**
- * @property int $id - category id
+ * @property int $id
  */
-class CategoryUpdateRule extends CategoryCreateRule
+class CourseUpdateRule extends CourseCreateRule
 {
     /**
      * @return string[]

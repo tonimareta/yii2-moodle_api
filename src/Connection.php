@@ -79,7 +79,9 @@ class Connection extends Model
             return true;
         }
 
-        $this->checkException($data);
+        if (!empty($data['exception'])) {
+            throw new Exception(implode(PHP_EOL, $data), 500);
+        }
 
         return $this->prepareData($data);
     }
@@ -137,20 +139,6 @@ class Connection extends Model
     protected function buildQueryString(array $params): string
     {
         return http_build_query($params, '', '&');
-    }
-
-    /**
-     * @param array $data
-     * @return $this
-     * @throws Exception
-     */
-    protected function checkException(array $data): static
-    {
-        if (!empty($data['exception'])) {
-            throw new Exception(implode(PHP_EOL, $data), 500);
-        }
-
-        return $this;
     }
 
     /**

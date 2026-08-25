@@ -2,12 +2,12 @@
 
 namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\rules\CategoryCreateRule;
 use tonimareta\moodle\options\CategoryCriteriaOption;
-use tonimareta\moodle\rules\CategoryRemoveRule;
-use tonimareta\moodle\rules\CategoryUpdateRule;
 use tonimareta\moodle\RestModel;
-use yii\helpers\ArrayHelper;
+use tonimareta\moodle\rules\CategoryCreateRule;
+use tonimareta\moodle\rules\CategoryUpdateRule;
+use yii\base\InvalidConfigException;
+use yii\httpclient\Exception;
 
 /**
  * @property int $id
@@ -51,79 +51,11 @@ class CourseCategory extends RestModel
     }
 
     /**
-     * @return CourseCategory|null
-     */
-    public function create(): ?CourseCategory
-    {
-        if (!$this->name) {
-            return null;
-        }
-
-        $categories = static::createMany([array_filter($this->toArray())]);
-        return $categories[0] ?? null;
-    }
-
-    /**
-     * @param array $categories
-     * @return array
-     */
-    public static function createMany(array $categories): array
-    {
-        $categories = array_filter(ArrayHelper::map($categories, 'name', fn($category) => (new CategoryCreateRule($category))->filterItems()));
-
-        if (!$created = static::connect('core_course_create_categories', ['categories' => array_values($categories)])) {
-            return [];
-        }
-
-        return array_values(array_filter(array_map(function ($category) use ($categories) {
-            if (!empty($category['name']) && !empty($categories[$category['name']])) {
-                $categories[$category['name']]['id'] = $category['id'];
-                return new static($categories[$category['name']]);
-            }
-
-            return null;
-        }, $created)));
-    }
-
-    /**
-     * @param int|null $newParentId - the parent category to move the contents to, if specified
-     * @param bool $recursive - recursively delete all contents inside this category or move contents to newParentId
-     * @return bool
-     */
-    public function delete(?int $newParentId = null, bool $recursive = false): bool
-    {
-        if (!$this->id) {
-            return false;
-        }
-
-        $remove = new CategoryRemoveRule(['id' => $this->id]);
-
-        if (!is_null($newParentId)) {
-            $remove->newparent = $newParentId;
-        }
-
-        if ($recursive) {
-            $remove->newparent = null;
-            $remove->recursive = (int) $recursive;
-        }
-
-        return static::deleteMany([$remove]);
-    }
-
-    /**
-     * @param array $categoryRemoveRules
-     * @return bool
-     */
-    public static function deleteMany(array $categoryRemoveRules): bool
-    {
-        $categories = array_map(fn ($category) => (new CategoryRemoveRule($category))->filterItems(), $categoryRemoveRules);
-        return static::connect('core_course_delete_categories', ['categories' => array_values($categories)]);
-    }
-
-    /**
      * @param CategoryCriteriaOption $criteria
      * @param bool $addSubCategories
      * @return CourseCategory[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByField(CategoryCriteriaOption $criteria, bool $addSubCategories = true): array
     {
@@ -138,8 +70,10 @@ class CourseCategory extends RestModel
     /**
      * @param int $id
      * @return CourseCategory|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
-    public static function getById(int $id): ?CourseCategory
+    public static function getById(int $id): ?static
     {
         $category = static::getByField(new CategoryCriteriaOption(['id' => $id]));
         return $category[0] ?? null;
@@ -148,8 +82,10 @@ class CourseCategory extends RestModel
     /**
      * @param string $idnumber
      * @return CourseCategory|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
-    public static function getByIdnumber(string $idnumber): ?CourseCategory
+    public static function getByIdnumber(string $idnumber): ?static
     {
         $category = static::getByField(new CategoryCriteriaOption(['idnumber' => $idnumber]));
         return $category[0] ?? null;
@@ -158,6 +94,8 @@ class CourseCategory extends RestModel
     /**
      * @param array $ids
      * @return CourseCategory[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByIds(array $ids): array
     {
@@ -167,6 +105,8 @@ class CourseCategory extends RestModel
     /**
      * @param string $name
      * @return CourseCategory[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByName(string $name): array
     {
@@ -176,6 +116,8 @@ class CourseCategory extends RestModel
     /**
      * @param int $parentId
      * @return CourseCategory[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getByParentId(int $parentId): array
     {
@@ -184,6 +126,8 @@ class CourseCategory extends RestModel
 
     /**
      * @return CourseCategory[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getHidden(): array
     {
@@ -192,6 +136,8 @@ class CourseCategory extends RestModel
 
     /**
      * @return CourseCategory[]
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getVisible(): array
     {
@@ -199,24 +145,34 @@ class CourseCategory extends RestModel
     }
 
     /**
-     * @return bool
+     * @return array
      */
-    public function update(): bool
+    public function rules(): array
     {
-        if (!$this->id) {
-            return false;
-        }
+        return [
+            [['name'], 'required', 'on' => self::SCENARIO_CREATE],
+            [['id'], 'required', 'on' => self::SCENARIO_DELETE],
+            [['id'], 'required', 'on' => self::SCENARIO_UPDATE],
 
-        return static::updateMany([$this->toArray()]);
+            [[
+                'id', 'descriptionformat', 'parent', 'sortorder', 'coursecount', 'visible', 'visibleold',
+                'timemodified', 'depth',
+            ], 'integer'],
+            [['name','idnumber','description','path','theme'], 'string'],
+        ];
     }
 
     /**
-     * @param array $categories
-     * @return bool
+     * @return array[]
      */
-    public static function updateMany(array $categories): bool
+    protected function crudRules(): array
     {
-        $categories = array_filter(ArrayHelper::map($categories, 'id', fn($category) => (new CategoryUpdateRule($category))->filterItems()));
-        return static::connect('core_course_update_categories', ['categories' => array_values($categories)]);
+        $params = $this->toArray();
+
+        return [
+            self::SCENARIO_CREATE => ['core_course_create_categories', ['categories' => [new CategoryCreateRule($params)]]],
+            self::SCENARIO_DELETE => ['core_course_delete_categories', ['categories' => [['id' => $this->id]]]],
+            self::SCENARIO_UPDATE => ['core_course_update_categories', ['categories' => [new CategoryUpdateRule($params)]]],
+        ];
     }
 }

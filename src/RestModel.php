@@ -4,29 +4,78 @@ namespace tonimareta\moodle;
 
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Inflector;
+use yii\helpers\StringHelper;
 use yii\httpclient\Exception;
 
 class RestModel extends Model
 {
+    const SCENARIO_CREATE = 'create';
+    const SCENARIO_DELETE = 'delete';
+    const SCENARIO_UPDATE = 'update';
+
     /**
      * @param string $function
      * @param array $params
      * @param string $method
      * @return mixed
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function connect(string $function, array $params = [], string $method = 'post'): mixed
     {
-        try {
-            return static::db()
-                ->setFunction($function)
-                ->setMethod($method)
-                ->setParams($params)
-                ->send();
-        } catch (Exception|InvalidConfigException $e) {
-            Yii::error($e->getMessage());
+        return static::db()
+            ->setFunction($function)
+            ->setMethod($method)
+            ->setParams($params)
+            ->send();
+    }
+
+    /**
+     * @return bool
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public function delete(): bool
+    {
+        $this->setScenario(self::SCENARIO_DELETE);
+
+        if (!$this->validate()) {
+            return false;
         }
 
-        return false;
+        if (!$pk = $this->primaryKey()) {
+            return false;
+        }
+
+        if (empty($this->{$pk})) {
+            return false;
+        }
+
+        $rules = static::crudRules();
+
+        if (empty($rules[self::SCENARIO_DELETE])) {
+            return false;
+        }
+
+        list($method, $params) = array_pad($rules[self::SCENARIO_DELETE], 2, null);
+
+        if (!$method) {
+            return false;
+        }
+
+        $result = static::connect($method, $params ?? []);
+
+        if (!$result) {
+            return false;
+        }
+
+        foreach ($this as $property => $value) {
+            $this->{$property} = null;
+        }
+
+        return true;
     }
 
     /**
@@ -54,5 +103,83 @@ class RestModel extends Model
         }
 
         return array_map(fn ($data) => new static($data), $data);
+    }
+
+    /**
+     * @return array
+     */
+    public function scenarios(): array
+    {
+        return ArrayHelper::merge(parent::scenarios(), [
+            self::SCENARIO_CREATE => [],
+            self::SCENARIO_DELETE => [],
+            self::SCENARIO_UPDATE => [],
+        ]);
+    }
+
+    /**
+     * @return bool
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public function save(): bool
+    {
+        if (!$pk = static::primaryKey()) {
+            return false;
+        }
+
+        $scenario = !empty($this->{$pk}) ? self::SCENARIO_UPDATE : self::SCENARIO_CREATE;
+        $this->setScenario($scenario);
+
+        if (!$this->validate()) {
+            return false;
+        }
+
+        $rules = static::crudRules();
+
+        if (empty($rules[$scenario])) {
+            return false;
+        }
+
+        list($method, $params) = array_pad($rules[$scenario], 2, null);
+
+        if (!$method) {
+            return false;
+        }
+
+        $models = static::connect($method, $params ?? []);
+
+        if (!is_array($models)) {
+            return !empty($models);
+        }
+
+        if (empty($models[0])) {
+            return false;
+        }
+
+        $this->setAttributes($models[0]);
+        $this->load($models[0]);
+
+        return true;
+    }
+
+    /**
+     * @return false[]
+     */
+    protected function crudRules(): array
+    {
+        return [
+            self::SCENARIO_CREATE => [],
+            self::SCENARIO_DELETE => [],
+            self::SCENARIO_UPDATE => [],
+        ];
+    }
+
+    /**
+     * @return string
+     */
+    protected static function primaryKey(): string
+    {
+        return 'id';
     }
 }

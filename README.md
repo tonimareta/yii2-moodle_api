@@ -109,6 +109,34 @@ $course = Course::getById($id);
 $course->getContent(CourseContentOption|null $options = null): CourseSection[];
 ```
 
+### Create course
+```php
+// Moodle web service function: core_course_create_courses
+// CourseCreateRule used for filter params
+$course = new Course([
+    'fullname' => $fullname, 
+    'shortname' => $shortname, 
+    'categoryid' => $categoryid,
+]);
+$course->save(): bool;
+```
+
+### Delete course
+```php
+// Moodle web service function: core_course_delete_courses
+$course = Course::getById($id);
+$course->delete(): bool;
+```
+
+### Update course
+```php
+// Moodle web service function: core_course_update_courses
+// CourseUpdateRule used for filter params
+$course = Course::getById($id);
+$course->fullname = $newName;
+$course->save(): bool;
+```
+
 ## Course Category
 ```php
 use tonimareta\moodle\models\CourseCategory;
@@ -170,14 +198,11 @@ $category = new CourseCategory(['name' => $name, 'parent' => $parentId]);
 $category->create(): CourseCategory|null;
 ```
 
-### Create categories multiple
+### Delete category
 ```php
-// Moodle web service function: core_course_create_categories
-// CategoryCreateRule used for filter params
-CourseCategory::createMany([
-    ['name' => $name, 'parent' => $parentId],
-    ['name' => $name2, 'parent' => $parentId2, 'description' => $description2],
-]): CourseCategory[];
+// Moodle web service function: core_course_delete_categories
+$category = CourseCategory::getById($id);
+$category->delete(): bool;
 ```
 
 ### Update category
@@ -187,34 +212,6 @@ CourseCategory::createMany([
 $category = CourseCategory::getById($id);
 $category->name = $newName;
 $category->update(): bool;
-```
-
-### Update categories multiple
-```php
-// Moodle web service function: core_course_update_categories
-// CategoryUpdateRule used for filter params
-CourseCategory::updateMany([
-    ['id' => $id, 'name' => $name],
-    ['id' => $id2, 'name' => $name2, 'description' => $description2],
-]): bool;
-```
-
-### Delete category
-```php
-// Moodle web service function: core_course_delete_categories
-// CategoryDeleteRule used for filter params
-$category = CourseCategory::getById($id);
-$category->delete(int|null $newParentId = null, bool $recursive = false): bool;
-```
-
-### Delete categories multiple
-```php
-// Moodle web service function: core_course_delete_categories
-// CategoryDeleteRule used for filter params
-CourseCategory::deleteMany([
-    ['id' => $id, 'recursive' => 1],
-    ['id' => $id2, 'newparent' => $parentId],
-]): bool
 ```
 
 ## Course Module
@@ -539,20 +536,41 @@ use tonimareta\moodle\models\CourseSection;
  * @property int $descriptionformat  - description format (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)
 ```
 
-### CategoryDeleteRule
-```php
- * @property int $id - category id to delete
- * @property int $newparent - the parent category to move the contents to, if specified
- * @property int $recursive - recursively delete all contents inside this category or move contents to newParentId
-```
-
 ### CategoryUpdateRule
 ```php
- * @property int $id - category id
- * @property string $name - category name
- * @property string $idnumber - category id number
- * @property int $parent - parent category id
- * @property string $description - category description
- * @property int $descriptionformat  - description format (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)
+ * @property int $id
+ * CategoryCreateRule::attributes()
+```
+
+### CourseCreateRule
+```php
+ * @property string $fullname
+ * @property string $shortname
+ * @property int $categoryid
+ * @property string $idnumber
+ * @property string $summary
+ * @property int $summaryformat
+ * @property string $format
+ * @property int $showgrades
+ * @property int $newsitems
+ * @property int $startdate
+ * @property int $enddate
+ * @property int $numsections
+ * @property int $maxbytes
+ * @property int $showreports
+ * @property int $visible
+ * @property int $hiddensections
+ * @property int $groupmode
+ * @property int $groupmodeforce
+ * @property int $defaultgroupingid
+ * @property int $enablecompletion
+ * @property int $completionnotify
+ * @property string $lang
+```
+
+### CourseUpdateRule
+```php
+ * @property int $id
+ * CourseCreateRule::attributes()
 ```
 

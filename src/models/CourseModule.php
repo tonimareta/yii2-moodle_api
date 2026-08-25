@@ -10,6 +10,8 @@ use tonimareta\moodle\objects\FileInfo;
 use tonimareta\moodle\objects\MoodleDate;
 use tonimareta\moodle\objects\Outcome;
 use tonimareta\moodle\RestModel;
+use yii\base\InvalidConfigException;
+use yii\httpclient\Exception;
 
 /**
  * @property int $id
@@ -123,6 +125,8 @@ class CourseModule extends RestModel
     /**
      * @param int $id
      * @return static|null
+     * @throws Exception
+     * @throws InvalidConfigException
      */
     public static function getById(int $id): ?static
     {
