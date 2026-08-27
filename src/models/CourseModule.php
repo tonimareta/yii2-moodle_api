@@ -10,6 +10,8 @@ use tonimareta\moodle\objects\FileInfo;
 use tonimareta\moodle\objects\MoodleDate;
 use tonimareta\moodle\objects\Outcome;
 use tonimareta\moodle\RestModel;
+use tonimareta\moodle\rules\CourseCreateRule;
+use tonimareta\moodle\rules\CourseUpdateRule;
 use yii\base\InvalidConfigException;
 use yii\httpclient\Exception;
 
@@ -136,6 +138,65 @@ class CourseModule extends RestModel
 
         $module = $module['cm'] ?? $module;
         return new static($module);
+    }
+
+    /**
+     * @param string $moduleName
+     * @param int $instanceId
+     * @return static|null
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function getByInstanceId(string $moduleName, int $instanceId): ?static
+    {
+        $module = static::connect('core_course_get_course_module_by_instance', [
+            'module' => $moduleName,
+            'instance' => $instanceId,
+        ]);
+
+        if (!$module) {
+            return null;
+        }
+
+        $module = $module['cm'] ?? $module;
+        return new static($module);
+    }
+
+    /**
+     * @return array
+     */
+    public function rules(): array
+    {
+        return [
+            [[
+                'id', 'instance', 'contextid', 'visible', 'uservisible', 'visibleold', 'visibleoncoursepage',
+                'showdescription', 'course', 'section', 'sectionnum', 'module', 'branded', 'indent', 'noviewlink',
+                'candisplay', 'completion', 'completiongradeitemnumber', 'completionpassgrade', 'completionview',
+                'completionexpected', 'downloadcontent', 'groupmode', 'groupingid', 'added', 'score', 'gradecat',
+            ], 'integer'],
+            [[
+                'url', 'name', 'description', 'availabilityinfo', 'modicon', 'modname', 'idnumber', 'purpose',
+                'modplural', 'availability', 'onclick', 'afterlink', 'customdata', 'gradepass',
+            ], 'string'],
+            [[
+
+            ]],
+            [[
+                'activitybadge', 'completiondata', 'dates', 'contents', 'contentsinfo', 'advancedgrading', 'outcomes',
+            ], 'safe'],
+        ];
+    }
+
+    /**
+     * @return array[]
+     */
+    protected function crudRules(): array
+    {
+        return [
+            self::SCENARIO_CREATE => [],
+            self::SCENARIO_DELETE => ['core_course_delete_modules', ['cmids' => [$this->id]]],
+            self::SCENARIO_UPDATE => [],
+        ];
     }
 
     /**

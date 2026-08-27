@@ -8,6 +8,7 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\Inflector;
 use yii\helpers\StringHelper;
 use yii\httpclient\Exception;
+use yii\web\MethodNotAllowedHttpException;
 
 class RestModel extends Model
 {
@@ -121,6 +122,7 @@ class RestModel extends Model
      * @return bool
      * @throws Exception
      * @throws InvalidConfigException
+     * @throws MethodNotAllowedHttpException
      */
     public function save(): bool
     {
@@ -138,13 +140,13 @@ class RestModel extends Model
         $rules = static::crudRules();
 
         if (empty($rules[$scenario])) {
-            return false;
+            throw new MethodNotAllowedHttpException('Method not allowed.');
         }
 
         list($method, $params) = array_pad($rules[$scenario], 2, null);
 
         if (!$method) {
-            return false;
+            throw new MethodNotAllowedHttpException("The {$method} not allowed.");
         }
 
         $models = static::connect($method, $params ?? []);

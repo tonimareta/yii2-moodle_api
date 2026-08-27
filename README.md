@@ -225,6 +225,19 @@ use tonimareta\moodle\models\CourseModule;
 CourseModule::getById(int $id): CourseModule|null;
 ```
 
+### Get course module by instance id
+```php
+// Moodle web service function: core_course_get_course_module_by_instance
+CourseModule::getByInstanceId(string $moduleName, int $instanceId): CourseModule|null;
+```
+
+### Delete module
+```php
+// Moodle web service function: core_course_delete_modules
+$module = CourseModule::getById($id);
+$module->delete(): bool;
+```
+
 ## Course Section
 ```php
 use tonimareta\moodle\models\CourseSection;
