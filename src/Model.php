@@ -2,6 +2,8 @@
 
 namespace tonimareta\moodle;
 
+use yii\base\UnknownPropertyException;
+
 class Model extends \yii\base\Model
 {
     /**
@@ -16,6 +18,7 @@ class Model extends \yii\base\Model
     /**
      * @param string $name
      * @return mixed
+     * @throws UnknownPropertyException
      */
     public function __get($name)
     {
@@ -34,6 +37,7 @@ class Model extends \yii\base\Model
     /**
      * @param string $name
      * @param mixed $value
+     * @throws UnknownPropertyException
      */
     public function __set($name, $value)
     {

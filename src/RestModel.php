@@ -2,15 +2,15 @@
 
 namespace tonimareta\moodle;
 
+use tonimareta\moodle\interfaces\CriteriaInterface;
+use tonimareta\moodle\interfaces\OptionInterface;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
-use yii\helpers\Inflector;
-use yii\helpers\StringHelper;
 use yii\httpclient\Exception;
 use yii\web\MethodNotAllowedHttpException;
 
-class RestModel extends Model
+abstract class RestModel extends Model
 {
     const SCENARIO_CREATE = 'create';
     const SCENARIO_DELETE = 'delete';
@@ -93,13 +93,33 @@ class RestModel extends Model
     }
 
     /**
+     * @param CriteriaInterface $criteria
+     * @return array
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    abstract public static function getByCriteria(CriteriaInterface $criteria): array;
+
+    /**
+     * @param CriteriaInterface $criteria
+     * @return static|null
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function getByCriteriaOne(CriteriaInterface $criteria): ?static
+    {
+        $models = static::getByCriteria($criteria);
+        return $models[0] ?? null;
+    }
+
+    /**
      * @param array $data
      * @param string|null $formId
      * @return static[]
      */
     public static function loadData(array $data, ?string $formId = null): array
     {
-        if ($formId && !empty($data[$formId])) {
+        if ($formId && isset($data[$formId])) {
             $data = $data[$formId];
         }
 

@@ -5,6 +5,7 @@ namespace tonimareta\moodle\rules;
 use tonimareta\moodle\Rule;
 
 /**
+ * @property int $id
  * @property string $fullname
  * @property string $shortname
  * @property int $categoryid
@@ -28,7 +29,7 @@ use tonimareta\moodle\Rule;
  * @property int $completionnotify
  * @property string $lang
  */
-class CourseCreateRule extends Rule
+class CourseRule extends Rule
 {
     /**
      * @return string[]
@@ -36,6 +37,7 @@ class CourseCreateRule extends Rule
     public function attributes(): array
     {
         return [
+            'id',
             'fullname',
             'shortname',
             'categoryid',

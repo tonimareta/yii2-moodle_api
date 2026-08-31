@@ -19,7 +19,7 @@ class CourseContentOption extends Option
     /**
      * @return string[]
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'excludemodules',

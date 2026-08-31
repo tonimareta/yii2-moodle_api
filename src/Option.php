@@ -2,7 +2,9 @@
 
 namespace tonimareta\moodle;
 
-class Option extends Model
+use tonimareta\moodle\interfaces\OptionInterface;
+
+class Option extends Model implements OptionInterface
 {
     /**
      * @return string[]

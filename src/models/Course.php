@@ -2,18 +2,22 @@
 
 namespace tonimareta\moodle\models;
 
+use tonimareta\moodle\criterias\CourseCriteria;
+use tonimareta\moodle\interfaces\CriteriaInterface;
+use tonimareta\moodle\interfaces\OptionInterface;
 use tonimareta\moodle\objects\Contact;
 use tonimareta\moodle\objects\CourseFilter;
 use tonimareta\moodle\objects\CustomField;
 use tonimareta\moodle\objects\File;
 use tonimareta\moodle\options\CourseContentOption;
 use tonimareta\moodle\options\CourseFormatOption;
+use tonimareta\moodle\options\EnrolOption;
 use tonimareta\moodle\RestModel;
-use tonimareta\moodle\rules\CourseCreateRule;
-use tonimareta\moodle\rules\CourseUpdateRule;
+use tonimareta\moodle\rules\CourseRule;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\httpclient\Exception;
+use yii\web\MethodNotAllowedHttpException;
 
 /**
  * @property int $id
@@ -117,6 +121,33 @@ class Course extends RestModel
     }
 
     /**
+     * @param int $userId
+     * @param int $roleId
+     * @param int|null $timeStart
+     * @param int|null $timeEnd
+     * @return bool
+     * @throws Exception
+     * @throws InvalidConfigException
+     * @throws MethodNotAllowedHttpException
+     */
+    public function enrolUser(int $userId, int $roleId, ?int $timeStart = null, ?int $timeEnd = null): bool
+    {
+        if (!$this->id) {
+            return false;
+        }
+
+        $enrolment = new Enrol([
+            'courseid' => $this->id,
+            'userid' => $userId,
+            'roleid' => $roleId,
+            'timestart' => $timeStart,
+            'timeend' => $timeEnd,
+        ]);
+
+        return $enrolment->save();
+    }
+
+    /**
      * @param int $categoryId
      * @return Course[]
      * @throws Exception
@@ -124,7 +155,19 @@ class Course extends RestModel
      */
     public static function getByCategory(int $categoryId): array
     {
-        return static::getByField('category', $categoryId);
+        return static::getByCriteria(new CourseCriteria(['category' => $categoryId]));
+    }
+
+    /**
+     * @param CourseCriteria $criteria
+     * @return Course[]
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function getByCriteria(CriteriaInterface $criteria): array
+    {
+        $courses = static::connect('core_course_get_courses_by_field', $criteria->getItems());
+        return static::loadData($courses, 'courses');
     }
 
     /**
@@ -135,7 +178,7 @@ class Course extends RestModel
      */
     public static function getById(int $id): ?static
     {
-        return static::getByFieldOne('id', $id);
+        return static::getByCriteriaOne(new CourseCriteria(['id' => $id]));
     }
 
     /**
@@ -146,7 +189,7 @@ class Course extends RestModel
      */
     public static function getByIdNumber(int $idNumber): ?static
     {
-        return static::getByFieldOne('idnumber', $idNumber);
+        return static::getByCriteriaOne(new CourseCriteria(['idnumber' => $idNumber]));
     }
 
     /**
@@ -157,7 +200,7 @@ class Course extends RestModel
      */
     public static function getByIds(array $ids): array
     {
-        return static::getByField('ids', implode(',', $ids));
+        return static::getByCriteria(new CourseCriteria(['ids' => implode(',', $ids)]));
     }
 
     /**
@@ -168,7 +211,7 @@ class Course extends RestModel
      */
     public static function getByShortname(string $shortname): ?static
     {
-        return static::getByFieldOne('shortname', $shortname);
+        return static::getByCriteriaOne(new CourseCriteria(['shortname' => $shortname]));
     }
 
     /**
@@ -208,6 +251,26 @@ class Course extends RestModel
         }
 
         return array_map(fn($section) => new CourseSection($section), $data);
+    }
+
+    /**
+     * @param EnrolOption|null $options
+     * @return array
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public function getUsers(?EnrolOption $options = null): array
+    {
+        if (!$this->id) {
+            return [];
+        }
+
+        $users = static::connect('core_enrol_get_enrolled_users', array_filter([
+            'courseid' => $this->id,
+            'options' => $options?->getItems(),
+        ]));
+
+        return User::loadData($users);
     }
 
     /**
@@ -254,34 +317,25 @@ class Course extends RestModel
     }
 
     /**
-     * @param string $field
-     * @param int|string $value
-     * @param bool $reset
-     * @return Course[]
+     * @param int $userId
+     * @param int $roleId
+     * @return bool
      * @throws Exception
      * @throws InvalidConfigException
      */
-    protected static function getByField(string $field, int|string $value, bool $reset = false): array
+    public function unEnrolUser(int $userId, int $roleId): bool
     {
-        $courses = static::connect('core_course_get_courses_by_field', [
-            'field' => $field,
-            'value' => $value,
+        if (!$this->id) {
+            return false;
+        }
+
+        $enrolment = new Enrol([
+            'courseid' => $this->id,
+            'userid' => $userId,
+            'roleid' => $roleId,
         ]);
 
-        return static::loadData($courses, 'courses');
-    }
-
-    /**
-     * @param string $field
-     * @param int|string $value
-     * @return Course|null
-     * @throws Exception
-     * @throws InvalidConfigException
-     */
-    protected static function getByFieldOne(string $field, int|string $value): ?static
-    {
-        $courses = static::getByField($field, $value);
-        return $courses[0] ?? null;
+        return $enrolment->delete();
     }
 
     /**
@@ -302,12 +356,13 @@ class Course extends RestModel
      */
     protected function crudRules(): array
     {
-        $params = $this->toArray();
+        $rule = new CourseRule($this->toArray());
+        $params = $rule->filterItems();
 
         return [
-            self::SCENARIO_CREATE => ['core_course_create_courses', ['courses' => [new CourseCreateRule($params)]]],
+            self::SCENARIO_CREATE => ['core_course_create_courses', ['courses' => [$params]]],
             self::SCENARIO_DELETE => ['core_course_delete_courses', ['courseids' => [$this->id]]],
-            self::SCENARIO_UPDATE => ['core_course_update_courses', ['courses' => [new CourseUpdateRule($params)]]],
+            self::SCENARIO_UPDATE => ['core_course_update_courses', ['courses' => [$params]]],
         ];
     }
 }

@@ -10,7 +10,7 @@ use tonimareta\moodle\objects\FileInfo;
 use tonimareta\moodle\objects\MoodleDate;
 use tonimareta\moodle\objects\Outcome;
 use tonimareta\moodle\RestModel;
-use tonimareta\moodle\rules\CourseCreateRule;
+use tonimareta\moodle\rules\CourseRule;
 use tonimareta\moodle\rules\CourseUpdateRule;
 use yii\base\InvalidConfigException;
 use yii\httpclient\Exception;

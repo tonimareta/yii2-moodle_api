@@ -2,11 +2,14 @@
 
 namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\options\CategoryCriteriaOption;
+use tonimareta\moodle\criterias\CategoryCriteria;
+use tonimareta\moodle\interfaces\CriteriaInterface;
+use tonimareta\moodle\interfaces\OptionInterface;
+use tonimareta\moodle\options\CategoryIncludeOption;
 use tonimareta\moodle\RestModel;
-use tonimareta\moodle\rules\CategoryCreateRule;
-use tonimareta\moodle\rules\CategoryUpdateRule;
+use tonimareta\moodle\rules\CategoryRule;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\httpclient\Exception;
 
 /**
@@ -51,19 +54,20 @@ class CourseCategory extends RestModel
     }
 
     /**
-     * @param CategoryCriteriaOption $criteria
-     * @param bool $addSubCategories
+     * @param CategoryCriteria $criteria
      * @return CourseCategory[]
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public static function getByField(CategoryCriteriaOption $criteria, bool $addSubCategories = true): array
+    public static function getByCriteria(CriteriaInterface $criteria): array
     {
-        $categories = static::connect('core_course_get_categories', [
-            'criteria' => $criteria->getItems(),
-            'addsubcategories' => (int) $addSubCategories,
-        ]);
+        $params = ['criteria' => $criteria->getItems()];
 
+        if ($options = $criteria->options()) {
+            $params = ArrayHelper::merge($params, $options);
+        }
+
+        $categories = static::connect('core_course_get_categories', $params);
         return static::loadData($categories);
     }
 
@@ -75,8 +79,7 @@ class CourseCategory extends RestModel
      */
     public static function getById(int $id): ?static
     {
-        $category = static::getByField(new CategoryCriteriaOption(['id' => $id]));
-        return $category[0] ?? null;
+        return static::getByCriteriaOne(new CategoryCriteria(['id' => $id]));
     }
 
     /**
@@ -87,8 +90,7 @@ class CourseCategory extends RestModel
      */
     public static function getByIdnumber(string $idnumber): ?static
     {
-        $category = static::getByField(new CategoryCriteriaOption(['idnumber' => $idnumber]));
-        return $category[0] ?? null;
+        return static::getByCriteriaOne(new CategoryCriteria(['idnumber' => $idnumber]));
     }
 
     /**
@@ -99,7 +101,7 @@ class CourseCategory extends RestModel
      */
     public static function getByIds(array $ids): array
     {
-        return static::getByField(new CategoryCriteriaOption(['ids' =>  implode(',', $ids)]));
+        return static::getByCriteria(new CategoryCriteria(['ids' =>  implode(',', $ids)]));
     }
 
     /**
@@ -110,7 +112,7 @@ class CourseCategory extends RestModel
      */
     public static function getByName(string $name): array
     {
-        return static::getByField(new CategoryCriteriaOption(['name' =>  trim($name)]));
+        return static::getByCriteria(new CategoryCriteria(['name' =>  trim($name)]));
     }
 
     /**
@@ -121,7 +123,7 @@ class CourseCategory extends RestModel
      */
     public static function getByParentId(int $parentId): array
     {
-        return static::getByField(new CategoryCriteriaOption(['parent' =>  $parentId]));
+        return static::getByCriteria(new CategoryCriteria(['parent' =>  $parentId]));
     }
 
     /**
@@ -131,7 +133,7 @@ class CourseCategory extends RestModel
      */
     public static function getHidden(): array
     {
-        return static::getByField(new CategoryCriteriaOption(['visible' =>  0]));
+        return static::getByCriteria(new CategoryCriteria(['visible' =>  0]));
     }
 
     /**
@@ -141,7 +143,7 @@ class CourseCategory extends RestModel
      */
     public static function getVisible(): array
     {
-        return static::getByField(new CategoryCriteriaOption(['visible' =>  1]));
+        return static::getByCriteria(new CategoryCriteria(['visible' =>  1]));
     }
 
     /**
@@ -167,12 +169,13 @@ class CourseCategory extends RestModel
      */
     protected function crudRules(): array
     {
-        $params = $this->toArray();
+        $rule = new CategoryRule($this->toArray());
+        $params = $rule->filterItems();
 
         return [
-            self::SCENARIO_CREATE => ['core_course_create_categories', ['categories' => [new CategoryCreateRule($params)]]],
+            self::SCENARIO_CREATE => ['core_course_create_categories', ['categories' => [$params]]],
             self::SCENARIO_DELETE => ['core_course_delete_categories', ['categories' => [['id' => $this->id]]]],
-            self::SCENARIO_UPDATE => ['core_course_update_categories', ['categories' => [new CategoryUpdateRule($params)]]],
+            self::SCENARIO_UPDATE => ['core_course_update_categories', ['categories' => [$params]]],
         ];
     }
 }
