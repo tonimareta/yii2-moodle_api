@@ -44,7 +44,7 @@ class CourseSection extends RestModel
     /**
      * @return array
      */
-    protected function relations(): array
+    public function relations(): array
     {
         return [
             'modules' => CourseModule::class,

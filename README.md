@@ -42,328 +42,20 @@ Add to `components` section in `config/web.php`:
 * **PHP Version:** 8.1+
 
 ## Table of Contents
-1. [REST Models](#rest-models)
+1. [Models](#models)
    - [Course](#course)
    - [Course Category](#course-category)
    - [Course Module](#course-module)
    - [Course Section](#course-section)
+   - [Enrolment](#enrolment)
    - [User](#user)
-2. [Responses](#responses)
-   - [Models](#models)
-   - [Objects](#objects)
-   - [Options](#options)
-   - [Criterias](#criterias)
-   - [CRUD Rules](#rules)
+2. [Objects](#objects)
+3. [Options](#options)
 
-# REST Models
+# Models
 ## Course
 ```php
-use tonimareta\moodle\models\Course;
-```
-
-### Get course by field
-```php
-// Moodle web service function: core_course_get_courses_by_field
-Course::getByCriteria(CourseCriteria $criteria): Course[];
-```
-
-### Get course by id
-```php
-// Moodle web service function: core_course_get_courses_by_field
-Course::getById(int $id): Course|null;
-```
-
-### Get courses by ids
-```php
-// Moodle web service function: core_course_get_courses_by_field
-Course::getByIds(array $ids): Course[];
-```
-
-### Get course by shortname
-```php
-// Moodle web service function: core_course_get_courses_by_field
-Course::getByShortname(string $shortname): Course|null;
-```
-
-### Get course by idnumber
-```php
-// Moodle web service function: core_course_get_courses_by_field
-Course::getByIdNumber(int $idNumber): Course|null;
-```
-
-### Get courses for category
-```php
-// Moodle web service function: core_course_get_courses_by_field
-Course::getByCategory(int $category): Course[];
-```
-
-### Search courses by name
-```php
-// Moodle web service function: core_course_search_courses
-Course::searchByName(string $name): Course[];
-```
-
-### Get course category
-```php
-// Moodle web service function: core_course_get_categories
-$course = Course::getById($id);
-$course->getCategory(): CourseCategory|null;
-```
-
-### Get course contents (sections with modules)
-```php
-// Moodle web service function: core_course_get_contents
-$course = Course::getById($id);
-$course->getContent(CourseContentOption|null $options = null): CourseSection[];
-```
-
-### Get course enrolled users
-```php
-// Moodle web service function: core_enrol_get_enrolled_users
-$course = Course::getById($id);
-$course->getContent(EnrolOption|null $options = null): User[];
-```
-
-### Create course
-```php
-// Moodle web service function: core_course_create_courses
-// CourseRule used for filter params
-$course = new Course([
-    'fullname' => $fullname, 
-    'shortname' => $shortname, 
-    'categoryid' => $categoryid,
-]);
-$course->save(): bool;
-```
-
-### Delete course
-```php
-// Moodle web service function: core_course_delete_courses
-$course = Course::getById($id);
-$course->delete(): bool;
-```
-
-### Update course
-```php
-// Moodle web service function: core_course_update_courses
-// CourseRule used for filter params
-$course = Course::getById($id);
-$course->fullname = $newName;
-$course->save(): bool;
-```
-
-## Course Category
-```php
-use tonimareta\moodle\models\CourseCategory;
-```
-
-### Get categories by field
-
-```php
-// Moodle web service function: core_course_get_categories
-// Use CategoryIncludeOption for additional params
-CourseCategory::getByCriteria(CategoryCriteria $criteria): CourseCategory[];
-```
-
-### Get category by id
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getById(int $id): CourseCategory|null;
-```
-
-### Get categories by ids
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getByIds(array $ids): CourseCategory[];
-```
-
-### Get categories by name
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getByName(string $name): CourseCategory[];
-```
-
-### Get categories by parent id
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getByParentId(int $parentId): CourseCategory[];
-```
-
-### Get category by idnumber
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getByIdnumber(string $idnumber): CourseCategory|null;
-```
-
-### Get hidden categories
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getHidden(): CourseCategory[];
-```
-
-### Get visible categories
-```php
-// Moodle web service function: core_course_get_categories
-CourseCategory::getVisible(): CourseCategory[];
-```
-
-### Create category
-```php
-// Moodle web service function: core_course_create_categories
-// CategoryRule used for filter params
-$category = new CourseCategory(['name' => $name, 'parent' => $parentId]);
-$category->create(): CourseCategory|null;
-```
-
-### Delete category
-```php
-// Moodle web service function: core_course_delete_categories
-$category = CourseCategory::getById($id);
-$category->delete(): bool;
-```
-
-### Update category
-```php
-// Moodle web service function: core_course_update_categories
-// CategoryRule used for filter params
-$category = CourseCategory::getById($id);
-$category->name = $newName;
-$category->update(): bool;
-```
-
-## Course Module
-```php
-use tonimareta\moodle\models\CourseModule;
-```
-
-### Get course module by id
-```php
-// Moodle web service function: core_course_get_course_module
-CourseModule::getById(int $id): CourseModule|null;
-```
-
-### Get course module by instance id
-```php
-// Moodle web service function: core_course_get_course_module_by_instance
-CourseModule::getByInstanceId(string $moduleName, int $instanceId): CourseModule|null;
-```
-
-### Delete module
-```php
-// Moodle web service function: core_course_delete_modules
-$module = CourseModule::getById($id);
-$module->delete(): bool;
-```
-
-## Course Section
-```php
-use tonimareta\moodle\models\CourseSection;
-```
-
-## Enrol
-```php
-use tonimareta\moodle\models\Enrol;
-```
-
-### Enrol users to courses
-```php
-// Moodle web service function: enrol_manual_enrol_users
-Enrol::massEnrol(Course[] $courses, Users[] $users, ?int $timeStart = null, ?int $timeEnd = null): bool;
-```
-
-### Removes manual enrolment
-```php
-// Moodle web service function: enrol_manual_unenrol_users
-Enrol::massUnEnrol(array $courses, array $users): bool;
-```
-
-## User
-```php
-use tonimareta\moodle\models\User;
-```
-
-### Get users by field
-```php
-// Moodle web service function: core_user_get_users
-User::getByCriteria(UserCriteria $criteria): User[];
-```
-
-### Get users by auth type
-```php
-// Moodle web service function: core_user_get_users
-User::getByAuthType(string $authType): User[];
-```
-
-### Get user by id
-```php
-// Moodle web service function: core_user_get_users
-User::getById(int $id): User|null;
-```
-
-### Get user by idnumber
-```php
-// Moodle web service function: core_user_get_users
-User::getByIdNumber(int|string $idNumber): User|null;
-```
-
-### Get user by email
-```php
-// Moodle web service function: core_user_get_users
-User::getByEmail(string $email): User|null;
-```
-
-### Get user by username
-```php
-// Moodle web service function: core_user_get_users
-User::getByUsername(string $username): User|null;
-```
-
-### Search users by email
-```php
-// Moodle web service function: core_user_get_users
-User::searchByEmail(string $email): array;
-```
-
-### Search users by full name
-```php
-// Moodle web service function: core_user_get_users
-User::searchByName(string $lastname, ?string $firstname = null, bool $strict = false): array;
-```
-
-### Create user
-```php
-// Moodle web service function: core_user_create_users
-// UserRule used for filter params
-$user = new User([
-    'username' => $username, 
-    'firstname' => $firstname, 
-    'lastname' => $lastname, 
-    'email' => $email,
-]);
-$user->save(): bool;
-```
-
-### Delete module
-```php
-// Moodle web service function: core_user_delete_users
-$user = User::getById($id);
-$user->delete(): bool;
-```
-
-### Update user
-```php
-// Moodle web service function: core_user_update_users
-// UserRule used for filter params
-$user = User::getById($id);
-$user->lastname = $lastname;
-$user->firstname = $firstname;
-$user->save(): bool;
-```
-
-# Responses
-## Models
-### Course
-```php
+/**
  * @property int $id
  * @property string $fullname
  * @property string $displayname
@@ -408,11 +100,112 @@ $user->save(): bool;
  * @property CourseFormatOption $courseformatoptions
  * @property string $communicationroomname
  * @property string $communicationroomurl
+ */
+use tonimareta\moodle\models\Course;
 ```
 
-### Course Category
+### Get course by id
 ```php
- * @property int $id
+// Moodle web service function: core_course_get_courses_by_field
+Course::getById(int $id): Course|null;
+```
+
+### Get courses by ids
+```php
+// Moodle web service function: core_course_get_courses_by_field
+Course::getByIds(array $ids): Course[];
+```
+
+### Get course by shortname
+```php
+// Moodle web service function: core_course_get_courses_by_field
+Course::getByShortname(string $shortname): Course|null;
+```
+
+### Get course by idnumber
+```php
+// Moodle web service function: core_course_get_courses_by_field
+Course::getByIdNumber(int $idNumber): Course|null;
+```
+
+### Get courses for category
+```php
+// Moodle web service function: core_course_get_courses_by_field
+Course::getByCategory(int $category): Course[];
+```
+
+### Search courses by name
+```php
+// Moodle web service function: core_course_search_courses
+Course::searchByName(string $name): Course[];
+```
+
+### Get course category
+```php
+// Moodle web service function: core_course_get_categories
+$course = Course::getById($id);
+$course->getCategory(): Category|null;
+```
+
+### Get course contents (sections with modules)
+```php
+// Moodle web service function: core_course_get_contents
+$course = Course::getById($id);
+$course->getContent(CourseContentOption|null $options = null): CourseSection[];
+```
+
+### Get course enrolled users
+```php
+// Moodle web service function: core_enrol_get_enrolled_users
+$course = Course::getById($id);
+$course->getContent(EnrolOption|null $options = null): User[];
+```
+
+### Enrol user to course
+```php
+// Moodle web service function: enrol_manual_enrol_users
+$course = Course::getById($id);
+$course->enrolUser(int $userId, int $roleId, int|null $timeStart = null, int|null $timeEnd = null): bool
+```
+
+### Unenrol user to course
+```php
+// Moodle web service function: enrol_manual_unenrol_users
+$course = Course::getById($id);
+$course->unEnrolUser(int $userId): bool
+```
+
+### Create course
+```php
+// Moodle web service function: core_course_create_courses
+$course = new Course([
+    'fullname' => $fullname, 
+    'shortname' => $shortname, 
+    'categoryid' => $categoryid,
+]);
+$course->save(): bool;
+```
+
+### Delete course
+```php
+// Moodle web service function: core_course_delete_courses
+$course = Course::getById($id);
+$course->delete(): bool;
+```
+
+### Update course
+```php
+// Moodle web service function: core_course_update_courses
+$course = Course::getById($id);
+$course->fullname = $newName;
+$course->save(): bool;
+```
+
+## Course Category
+
+```php
+/**
+ * @property int $ids
  * @property string $name
  * @property string $idnumber
  * @property string $description
@@ -426,10 +219,77 @@ $user->save(): bool;
  * @property int $depth
  * @property string $path
  * @property string $theme
+ */
+use tonimareta\moodle\models\Category;
 ```
 
-### Course Module
+### Get category by id
 ```php
+// Moodle web service function: core_course_get_categories
+Category::getById(int $id): Category|null;
+```
+
+### Get categories by ids
+```php
+// Moodle web service function: core_course_get_categories
+Category::getByIds(array $ids): Category[];
+```
+
+### Get categories by name
+```php
+// Moodle web service function: core_course_get_categories
+Category::getByName(string $name): Category[];
+```
+
+### Get categories by parent id
+```php
+// Moodle web service function: core_course_get_categories
+Category::getByParentId(int $parentId): Category[];
+```
+
+### Get category by idnumber
+```php
+// Moodle web service function: core_course_get_categories
+Category::getByIdnumber(string $idnumber): Category|null;
+```
+
+### Get hidden categories
+```php
+// Moodle web service function: core_course_get_categories
+Category::getHidden(): Category[];
+```
+
+### Get visible categories
+```php
+// Moodle web service function: core_course_get_categories
+Category::getByVisibility(bool $visible = true, int|null $parent = null): Category[];
+```
+
+### Create category
+```php
+// Moodle web service function: core_course_create_categories
+$category = new Category(['name' => $name, 'parent' => $parentId]);
+$category->create(): Category|null;
+```
+
+### Delete category
+```php
+// Moodle web service function: core_course_delete_categories
+$category = Category::getById($id);
+$category->delete(): bool;
+```
+
+### Update category
+```php
+// Moodle web service function: core_course_update_categories
+$category = Category::getById($id);
+$category->name = $newName;
+$category->update(): bool;
+```
+
+## Course Module
+```php
+/**
  * @property int $id
  * @property string $url
  * @property string $name
@@ -478,10 +338,32 @@ $user->save(): bool;
  * @property int $gradecat
  * @property AdvancedGrading[] $advancedgrading
  * @property Outcome[] $outcomes
+ */
+use tonimareta\moodle\models\CourseModule;
 ```
 
-### Course Section
+### Get course module by id
 ```php
+// Moodle web service function: core_course_get_course_module
+CourseModule::getById(int $id): CourseModule|null;
+```
+
+### Get course module by instance id
+```php
+// Moodle web service function: core_course_get_course_module_by_instance
+CourseModule::getByInstanceId(string $moduleName, int $instanceId): CourseModule|null;
+```
+
+### Delete module
+```php
+// Moodle web service function: core_course_delete_modules
+$module = CourseModule::getById($id);
+$module->delete(): bool;
+```
+
+## Course Section
+```php
+/**
  * @property int $id
  * @property string $name
  * @property int $visible
@@ -494,21 +376,39 @@ $user->save(): bool;
  * @property string $component
  * @property int $itemid
  * @property CourseModule[] $modules
+ */
+use tonimareta\moodle\models\CourseSection;
 ```
 
-### Enrol
+## Enrolment
+
 ```php
- * @property int $id
+/**
  * @property int $courseid
  * @property int $userid
  * @property int $roleid
  * @property int $timestart
  * @property int $timeend
  * @property int $suspend
+ */
+use tonimareta\moodle\models\Enrolment;
 ```
 
-### User
+### Enrol users to courses
 ```php
+// Moodle web service function: enrol_manual_enrol_users
+Enrolment::massEnrol(Course[] $courses, Users[] $users, int|null $timeStart = null, int|null $timeEnd = null): bool;
+```
+
+### Removes manual enrolment
+```php
+// Moodle web service function: enrol_manual_unenrol_users
+Enrolment::massUnEnrol(Course[] $courses, Users[] $users): bool;
+```
+
+## User
+```php
+/**
  * @property int $id
  * @property string $auth
  * @property string $password
@@ -549,10 +449,82 @@ $user->save(): bool;
  * @property Role[] $roles
  * @property Preference[] $preferences
  * @property Course[] $enrolledcourses
+ */
+use tonimareta\moodle\models\User;
 ```
 
-## Objects
-### ActivityBadge
+### Get users by auth type
+```php
+// Moodle web service function: core_user_get_users
+User::getByAuthType(string $authType): User[];
+```
+
+### Get user by id
+```php
+// Moodle web service function: core_user_get_users
+User::getById(int $id): User|null;
+```
+
+### Get user by idnumber
+```php
+// Moodle web service function: core_user_get_users
+User::getByIdNumber(int|string $idNumber): User|null;
+```
+
+### Get user by email
+```php
+// Moodle web service function: core_user_get_users
+User::getByEmail(string $email): User|null;
+```
+
+### Get user by username
+```php
+// Moodle web service function: core_user_get_users
+User::getByUsername(string $username): User|null;
+```
+
+### Search users by email
+```php
+// Moodle web service function: core_user_get_users
+User::searchByEmail(string $email): array;
+```
+
+### Search users by full name
+```php
+// Moodle web service function: core_user_get_users
+User::searchByName(string $lastname, string|null $firstname = null, bool $strict = false): array;
+```
+
+### Create user
+```php
+// Moodle web service function: core_user_create_users
+$user = new User([
+    'username' => $username, 
+    'firstname' => $firstname, 
+    'lastname' => $lastname, 
+    'email' => $email,
+]);
+$user->save(): bool;
+```
+
+### Delete module
+```php
+// Moodle web service function: core_user_delete_users
+$user = User::getById($id);
+$user->delete(): bool;
+```
+
+### Update user
+```php
+// Moodle web service function: core_user_update_users
+$user = User::getById($id);
+$user->lastname = $lastname;
+$user->firstname = $firstname;
+$user->save(): bool;
+```
+
+# Objects
+## ActivityBadge
 ```php
  * @property string $badgecontent
  * @property string $badgestyle
@@ -561,19 +533,19 @@ $user->save(): bool;
  * @property BadgeExtraAttributesOption[] $badgeextraattributes
 ```
 
-### AdvancedGrading
+## AdvancedGrading
 ```php
  * @property string $area
  * @property string $method
 ```
 
-### BadgeExtraAttribute
+## BadgeExtraAttribute
 ```php
  * @property string $name
  * @property mixed $value
 ```
 
-### CompletionData
+## CompletionData
 ```php
  * @property int $state 
  * @property int $timecompleted 
@@ -587,32 +559,32 @@ $user->save(): bool;
  * @property int $isoverallcomplete 
 ```
 
-### CompletionDetail
+## CompletionDetail
 ```php
  * @property string $rulename
  * @property CompletionRule $rulevalue
 ```
 
-### CompletionRule
+## CompletionRule
 ```php
  * @property int $status
  * @property string $description
 ```
 
-### Contact
+## Contact
 ```php
  * @property int $id
  * @property string $fullname
 ```
 
-### CourseFilter
+## CourseFilter
 ```php
  * @property string $filter
  * @property int $localstate
  * @property int $inheritedstate
 ```
 
-### CustomField
+## CustomField
 ```php
  * @property string $name
  * @property string $shortname
@@ -621,7 +593,7 @@ $user->save(): bool;
  * @property string $value
 ```
 
-### File
+## File
 ```php
  * @property string $filename
  * @property string $filepath
@@ -642,7 +614,7 @@ $user->save(): bool;
  * @property FileTag[] $tags
 ```
 
-### FileInfo
+## FileInfo
 ```php
  * @property int $filescount
  * @property int $filessize
@@ -651,7 +623,7 @@ $user->save(): bool;
  * @property string $repositorytype
 ```
 
-### FileTag
+## FileTag
 ```php
  * @property int $id
  * @property string $name
@@ -666,7 +638,7 @@ $user->save(): bool;
  * @property string $viewurl
 ```
 
-### Group
+## Group
 ```php
  * @property int $id
  * @property string $name
@@ -674,7 +646,7 @@ $user->save(): bool;
  * @property int $descriptionformat
 ```
 
-### MoodleDate
+## MoodleDate
 ```php
  * @property string $label
  * @property int $timestamp
@@ -682,20 +654,20 @@ $user->save(): bool;
  * @property string $dataid
 ```
 
-### Outcome
+## Outcome
 ```php
  * @property string $id
  * @property string $name
  * @property string $scale
 ```
 
-### Preference
+## Preference
 ```php
  * @property string $name
  * @property string $value
 ```
 
-### Role
+## Role
 ```php
  * @property int $roleid
  * @property string $name
@@ -703,13 +675,8 @@ $user->save(): bool;
  * @property int $sortorder
 ```
 
-## Options
-### CategoryIncludeOption
-```php
- * @property int $addsubcategories
-```
-
-### CourseContentOption
+# Options
+## CourseContentOption
 ```php
  * @property bool $excludemodules - Do not return modules, return only the sections structure
  * @property bool $excludecontents - Do not return module contents (i.e: files inside a resource)
@@ -721,14 +688,14 @@ $user->save(): bool;
  * @property int $modid - Return only the module with this id
 ```
 
-### CourseFormatOption
+## CourseFormatOption
 ```php
  * @property int $hiddensections
  * @property int $coursedisplay
  * @property int $indentation
 ```
 
-### EnrolOption
+## EnrolOption
 ```php
  * @property string $withcapability - return only users with this capability (requires 'moodle/role:review')
  * @property integer $groupid - return only users in this group id (requires 'moodle/site:accessallgroups')
@@ -740,108 +707,3 @@ $user->save(): bool;
  * @property string $sortby - sort by id, firstname or lastname. For ordering like the site does, use siteorder.
  * @property string $sortdirection - ASC or DESC
 ```
-
-## Criterias
-### CategoryCriteria
-```php
- * @property int $id - the category id
- * @property string $ids - category ids separated by commas
- * @property string $name - the category name
- * @property int $parent - the parent category id
- * @property string $idnumber - category idnumber - user must have 'moodle/category:manage' to search on idnumber
- * @property int $visible - whether the returned categories must be visible or hidden
-```
-
-### CourseCriteria
-```php
- * @property int $id - course id
- * @property string $ids - comma separated course ids
- * @property string $shortname - course short name
- * @property string $idnumber - course id number
- * @property int $category - category id the course belongs to
- * @property int $sectionid - section id that belongs to a course
-```
-
-### UserCriteria
-```php
- * @property int $id - matching user id,
- * @property string $lastname - user last name (Note: you can use % for searching but it may be considerably slower!),
- * @property string $firstname - user first name (Note: you can use % for searching but it may be considerably slower!),
- * @property string $idnumber - matching user idnumber,
- * @property string $username - matching user username,
- * @property string $email - user email (Note: you can use % for searching but it may be considerably slower!),
- * @property string $auth - matching user auth plugin
-```
-
-## CRUD Rules
-### CategoryRule
-```php
- * @property string $name - category name
- * @property string $idnumber - category id number
- * @property int $parent - parent category id
- * @property string $description - category description
- * @property int $descriptionformat  - description format (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)
-```
-
-### CourseRule
-```php
- * @property string $fullname - full name
- * @property string $shortname - course short name
- * @property int $categoryid - category id
- * @property string $idnumber - id number
- * @property string $summary - summary
- * @property int $summaryformat - summary format (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)
- * @property string $format - course format: weeks, topics, social, site,..
- * @property int $showgrades - 1 if grades are shown, otherwise 0
- * @property int $newsitems - number of recent items appearing on the course page
- * @property int $startdate - timestamp when the course start
- * @property int $enddate - timestamp when the course end
- * @property int $numsections - (deprecated, use courseformatoptions) number of weeks/topics
- * @property int $maxbytes - largest size of file that can be uploaded into the course
- * @property int $showreports - are activity report shown (yes = 1, no =0)
- * @property int $visible - 1: available to student, 0: not available
- * @property int $hiddensections - (deprecated, use courseformatoptions) How the hidden sections in the course are displayed to students
- * @property int $groupmode - no group, separate, visible
- * @property int $groupmodeforce - 1: yes, 0: no
- * @property int $defaultgroupingid - default grouping id
- * @property int $enablecompletion - Enabled, control via completion and activity settings
- * @property int $completionnotify - 1: yes 0: no
- * @property string $lang - forced course language
- * @property string $forcetheme - name of the force theme
- * @property CourseFormatOption[] $courseformatoptions - additional options for particular course format
- * @property CustomField[] $customfields - custom fields for the course
-```
-
-### UserRule
-```php
- * @property int $createpassword - True if password should be created and mailed to user.
- * @property string $username - Username policy is defined in Moodle security config.
- * @property string $auth - Auth plugins include manual, ldap, etc
- * @property string $password - Plain text password consisting of any characters
- * @property string $firstname - The first name(s) of the user
- * @property string $lastname - The family name of the user
- * @property string $email - A valid and unique email address
- * @property int $maildisplay - Email visibility
- * @property string $city - Home city of the user
- * @property string $country - Home country code of the user, such as AU or CZ
- * @property string $timezone - Timezone code such as Australia/Perth, or 99 for default
- * @property string $description - User profile description, no HTML
- * @property string $firstnamephonetic - The first name(s) phonetically of the user
- * @property string $lastnamephonetic - The family name phonetically of the user
- * @property string $middlename - The middle name of the user
- * @property string $alternatename - The alternate name of the user
- * @property string $interests - User interests (separated by commas)
- * @property string $idnumber - An arbitrary ID code number perhaps from the institution
- * @property string $institution - institution
- * @property string $department - department
- * @property string $phone1 - Phone 1
- * @property string $phone2 - Phone 2
- * @property string $address - Postal address
- * @property string $lang - Language code such as "en", must exist on server
- * @property string $calendartype - Calendar type such as "gregorian", must exist on server
- * @property string $theme - Theme name such as "standard", must exist on server
- * @property int $mailformat - Mail format code is 0 for plain text, 1 for HTML etc
- * @property CustomField[] $customfields - User custom fields (also known as user profil fields)
- * @property Preference[] $preferences - User preferences
-```
-

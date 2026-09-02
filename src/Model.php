@@ -3,6 +3,8 @@
 namespace tonimareta\moodle;
 
 use yii\base\UnknownPropertyException;
+use yii\helpers\Inflector;
+use yii\helpers\StringHelper;
 
 class Model extends \yii\base\Model
 {
@@ -49,6 +51,21 @@ class Model extends \yii\base\Model
     }
 
     /**
+     * @param bool $pluralize
+     * @return string
+     */
+    public static function modelName(bool $pluralize = false): string
+    {
+        $modelName = Inflector::camel2id(StringHelper::basename(static::class));
+
+        if ($pluralize) {
+            return Inflector::pluralize($modelName);
+        }
+
+        return $modelName;
+    }
+
+    /**
      * @param array $config
      * @return void
      */
@@ -86,7 +103,7 @@ class Model extends \yii\base\Model
     /**
      * @return array
      */
-    protected function relations(): array
+    public function relations(): array
     {
         return [];
     }

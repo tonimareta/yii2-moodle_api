@@ -2,15 +2,10 @@
 
 namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\criterias\CategoryCriteria;
-use tonimareta\moodle\interfaces\CriteriaInterface;
-use tonimareta\moodle\interfaces\OptionInterface;
-use tonimareta\moodle\options\CategoryIncludeOption;
 use tonimareta\moodle\RestModel;
-use tonimareta\moodle\rules\CategoryRule;
 use yii\base\InvalidConfigException;
-use yii\helpers\ArrayHelper;
 use yii\httpclient\Exception;
+use yii\web\MethodNotAllowedHttpException;
 
 /**
  * @property int $id
@@ -28,7 +23,7 @@ use yii\httpclient\Exception;
  * @property string $path
  * @property string $theme
  */
-class CourseCategory extends RestModel
+class Category extends RestModel
 {
     /**
      * @return string[]
@@ -54,96 +49,124 @@ class CourseCategory extends RestModel
     }
 
     /**
-     * @param CategoryCriteria $criteria
-     * @return CourseCategory[]
+     * @return bool
+     * @throws Exception
+     * @throws InvalidConfigException
+     * @throws MethodNotAllowedHttpException
+     */
+    public function delete(): bool
+    {
+        $this->setScenario(self::SCENARIO_DELETE);
+
+        if (!$this->id || !$this->validate()) {
+            return false;
+        }
+
+        $result = static::execute(self::SCENARIO_DELETE, [['id' => $this->id]]);
+
+        if (!is_array($result) && empty($result)) {
+            return false;
+        }
+
+        foreach ($this as $property => $value) {
+            $this->{$property} = null;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array $conditions
+     * @return static[]
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public static function getByCriteria(CriteriaInterface $criteria): array
+    public static function findAll(array $conditions): array
     {
-        $params = ['criteria' => $criteria->getItems()];
+        $criteria = [];
 
-        if ($options = $criteria->options()) {
-            $params = ArrayHelper::merge($params, $options);
+        foreach ($conditions as $key => $value) {
+            if ($key == 'addsubcategories') {
+                continue;
+            }
+
+            $criteria[] = [
+                'key' => $key,
+                'value' => $value,
+            ];
         }
 
-        $categories = static::connect('core_course_get_categories', $params);
-        return static::loadData($categories);
+        return parent::findAll([
+            'criteria' => $criteria,
+            'addsubcategories' => $conditions['addsubcategories'] ?? 0,
+        ]);
     }
 
     /**
      * @param int $id
-     * @return CourseCategory|null
+     * @return Category|null
      * @throws Exception
      * @throws InvalidConfigException
      */
     public static function getById(int $id): ?static
     {
-        return static::getByCriteriaOne(new CategoryCriteria(['id' => $id]));
+        return static::findOne(['id' => $id]);
     }
 
     /**
      * @param string $idnumber
-     * @return CourseCategory|null
+     * @return Category|null
      * @throws Exception
      * @throws InvalidConfigException
      */
     public static function getByIdnumber(string $idnumber): ?static
     {
-        return static::getByCriteriaOne(new CategoryCriteria(['idnumber' => $idnumber]));
+        return static::findOne(['idnumber' => $idnumber]);
     }
 
     /**
      * @param array $ids
-     * @return CourseCategory[]
+     * @return Category[]
      * @throws Exception
      * @throws InvalidConfigException
      */
     public static function getByIds(array $ids): array
     {
-        return static::getByCriteria(new CategoryCriteria(['ids' =>  implode(',', $ids)]));
+        return static::findAll(['ids' =>  implode(',', $ids)]);
     }
 
     /**
      * @param string $name
-     * @return CourseCategory[]
+     * @return Category[]
      * @throws Exception
      * @throws InvalidConfigException
      */
     public static function getByName(string $name): array
     {
-        return static::getByCriteria(new CategoryCriteria(['name' =>  trim($name)]));
+        return static::findAll(['name' =>  trim($name)]);
     }
 
     /**
      * @param int $parentId
-     * @return CourseCategory[]
+     * @return Category[]
      * @throws Exception
      * @throws InvalidConfigException
      */
     public static function getByParentId(int $parentId): array
     {
-        return static::getByCriteria(new CategoryCriteria(['parent' =>  $parentId]));
+        return static::findAll(['parent' =>  $parentId]);
     }
 
     /**
-     * @return CourseCategory[]
+     * @param bool $visible
+     * @param int|null $parent
+     * @return mixed
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public static function getHidden(): array
+    public static function getByVisibility(bool $visible = true, ?int $parent = null): array
     {
-        return static::getByCriteria(new CategoryCriteria(['visible' =>  0]));
-    }
-
-    /**
-     * @return CourseCategory[]
-     * @throws Exception
-     * @throws InvalidConfigException
-     */
-    public static function getVisible(): array
-    {
-        return static::getByCriteria(new CategoryCriteria(['visible' =>  1]));
+        return static::findAll(array_filter(['parent' => $parent, 'visible' =>  (int) $visible], 'strlen'));
     }
 
     /**
@@ -160,22 +183,35 @@ class CourseCategory extends RestModel
                 'id', 'descriptionformat', 'parent', 'sortorder', 'coursecount', 'visible', 'visibleold',
                 'timemodified', 'depth',
             ], 'integer'],
-            [['name','idnumber','description','path','theme'], 'string'],
+            [['name', 'idnumber', 'description', 'path', 'theme'], 'string'],
+        ];
+    }
+
+    /**
+     * @return string[]
+     */
+    public function saveAttributes(): array
+    {
+        return [
+            'id',
+            'name',
+            'idnumber',
+            'parent',
+            'description',
+            'descriptionformat',
         ];
     }
 
     /**
      * @return array[]
      */
-    protected function crudRules(): array
+    public static function services(): array
     {
-        $rule = new CategoryRule($this->toArray());
-        $params = $rule->filterItems();
-
         return [
-            self::SCENARIO_CREATE => ['core_course_create_categories', ['categories' => [$params]]],
-            self::SCENARIO_DELETE => ['core_course_delete_categories', ['categories' => [['id' => $this->id]]]],
-            self::SCENARIO_UPDATE => ['core_course_update_categories', ['categories' => [$params]]],
+            self::SCENARIO_CREATE => ['core_course_create_categories'],
+            self::SCENARIO_DELETE => ['core_course_delete_categories'],
+            self::SCENARIO_FIND => ['core_course_get_categories'],
+            self::SCENARIO_UPDATE => ['core_course_update_categories'],
         ];
     }
 }

@@ -24,7 +24,7 @@ class CompletionDetail extends Model
     /**
      * @return array
      */
-    protected function relations(): array
+    public function relations(): array
     {
         return [
             'rulevalue' => CompletionRule::class,

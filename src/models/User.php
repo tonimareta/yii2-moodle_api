@@ -2,15 +2,11 @@
 
 namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\interfaces\CriteriaInterface;
-use tonimareta\moodle\interfaces\OptionInterface;
 use tonimareta\moodle\objects\CustomField;
 use tonimareta\moodle\objects\Group;
 use tonimareta\moodle\objects\Role;
 use tonimareta\moodle\objects\Preference;
-use tonimareta\moodle\criterias\UserCriteria;
 use tonimareta\moodle\RestModel;
-use tonimareta\moodle\rules\UserRule;
 use yii\base\InvalidConfigException;
 use yii\httpclient\Exception;
 
@@ -115,6 +111,26 @@ class User extends RestModel
     }
 
     /**
+     * @param array $conditions
+     * @return static[]
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function findAll(array $conditions): array
+    {
+        $criteria = [];
+
+        foreach ($conditions as $key => $value) {
+            $criteria[] = [
+                'key' => $key,
+                'value' => $value,
+            ];
+        }
+
+        return parent::findAll(['criteria' => $criteria]);
+    }
+
+    /**
      * @param string $authType
      * @return User[]
      * @throws Exception
@@ -122,20 +138,7 @@ class User extends RestModel
      */
     public static function getByAuthType(string $authType): array
     {
-        return static::getByCriteria(new UserCriteria(['auth' => $authType]));
-    }
-
-    /**
-     * @param UserCriteria $criteria
-     * @param OptionInterface|null $options - not used
-     * @return User[]
-     * @throws Exception
-     * @throws InvalidConfigException
-     */
-    public static function getByCriteria(CriteriaInterface $criteria, ?OptionInterface $options = null): array
-    {
-        $users = static::connect('core_user_get_users', ['criteria' => $criteria->getItems()]);
-        return static::loadData($users, 'users');
+        return static::findAll(['auth' => $authType]);
     }
 
     /**
@@ -146,7 +149,7 @@ class User extends RestModel
      */
     public static function getById(int $id): ?User
     {
-        return static::getByCriteriaOne(new UserCriteria(['id' => $id]));
+        return static::findOne(['id' => $id]);
     }
 
     /**
@@ -157,7 +160,7 @@ class User extends RestModel
      */
     public static function getByIdNumber(int|string $idNumber): ?User
     {
-        return static::getByCriteriaOne(new UserCriteria(['idnumber' => $idNumber]));
+        return static::findOne(['idnumber' => $idNumber]);
     }
 
     /**
@@ -168,7 +171,7 @@ class User extends RestModel
      */
     public static function getByUsername(string $username): ?User
     {
-        return static::getByCriteriaOne(new UserCriteria(['username' => $username]));
+        return static::findOne(['username' => $username]);
     }
 
     /**
@@ -179,7 +182,7 @@ class User extends RestModel
      */
     public static function getByEmail(string $email): ?User
     {
-        return static::getByCriteriaOne(new UserCriteria(['email' => $email]));
+        return static::findOne(['email' => $email]);
     }
 
     /**
@@ -194,7 +197,7 @@ class User extends RestModel
             $email = "%$email%";
         }
 
-        return static::getByCriteria(new UserCriteria(['email' => $email]));
+        return static::findAll(['email' => $email]);
     }
 
     /**
@@ -217,31 +220,16 @@ class User extends RestModel
             }
         }
 
-        return static::getByCriteria(new UserCriteria([
+        return static::findAll(array_filter([
             'lastname' => $lastname,
             'firstname' => $firstname,
         ]));
     }
 
     /**
-     * @return false[]
-     */
-    protected function crudRules(): array
-    {
-        $rule = new UserRule($this->toArray());
-        $params = $rule->filterItems();
-
-        return [
-            self::SCENARIO_CREATE => ['core_user_create_users', ['users' => [$params]]],
-            self::SCENARIO_DELETE => ['core_user_delete_users', ['userids' => [$this->id]]],
-            self::SCENARIO_UPDATE => ['core_user_update_users', ['users' => [$params]]],
-        ];
-    }
-
-    /**
      * @return string[]
      */
-    protected function relations(): array
+    public function relations(): array
     {
         return [
             'customfields' => CustomField::class,
@@ -268,6 +256,58 @@ class User extends RestModel
                 'profileimageurlsmall', 'profileimageurl',
             ], 'string'],
             [['customfields', 'groups', 'roles', 'preferences', 'enrolledcourses', 'createpassword'], 'safe'],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function saveAttributes(): array
+    {
+        return [
+            'id',
+            'createpassword',
+            'username',
+            'auth',
+            'password',
+            'firstname',
+            'lastname',
+            'email',
+            'maildisplay',
+            'city',
+            'country',
+            'timezone',
+            'description',
+            'firstnamephonetic',
+            'lastnamephonetic',
+            'middlename',
+            'alternatename',
+            'interests',
+            'idnumber',
+            'institution',
+            'department',
+            'phone1',
+            'phone2',
+            'address',
+            'lang',
+            'calendartype',
+            'theme',
+            'mailformat',
+            'customfields',
+            'preferences',
+        ];
+    }
+
+    /**
+     * @return false[]
+     */
+    public static function services(): array
+    {
+        return [
+            self::SCENARIO_CREATE => ['core_user_create_users'],
+            self::SCENARIO_FIND => ['core_user_get_users'],
+            self::SCENARIO_DELETE => ['core_user_delete_users', 'userids'],
+            self::SCENARIO_UPDATE => ['core_user_update_users'],
         ];
     }
 }

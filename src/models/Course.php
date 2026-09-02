@@ -2,9 +2,6 @@
 
 namespace tonimareta\moodle\models;
 
-use tonimareta\moodle\criterias\CourseCriteria;
-use tonimareta\moodle\interfaces\CriteriaInterface;
-use tonimareta\moodle\interfaces\OptionInterface;
 use tonimareta\moodle\objects\Contact;
 use tonimareta\moodle\objects\CourseFilter;
 use tonimareta\moodle\objects\CustomField;
@@ -13,7 +10,6 @@ use tonimareta\moodle\options\CourseContentOption;
 use tonimareta\moodle\options\CourseFormatOption;
 use tonimareta\moodle\options\EnrolOption;
 use tonimareta\moodle\RestModel;
-use tonimareta\moodle\rules\CourseRule;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\httpclient\Exception;
@@ -136,7 +132,7 @@ class Course extends RestModel
             return false;
         }
 
-        $enrolment = new Enrol([
+        $enrolment = new Enrolment([
             'courseid' => $this->id,
             'userid' => $userId,
             'roleid' => $roleId,
@@ -148,6 +144,23 @@ class Course extends RestModel
     }
 
     /**
+     * @param array $conditions
+     * @return static[]
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function findAll(array $conditions): array
+    {
+        $field = array_key_first($conditions);
+        $value = $conditions[$field];
+
+        return parent::findAll([
+            'field' => $field,
+            'value' => $value,
+        ]);
+    }
+
+    /**
      * @param int $categoryId
      * @return Course[]
      * @throws Exception
@@ -155,19 +168,7 @@ class Course extends RestModel
      */
     public static function getByCategory(int $categoryId): array
     {
-        return static::getByCriteria(new CourseCriteria(['category' => $categoryId]));
-    }
-
-    /**
-     * @param CourseCriteria $criteria
-     * @return Course[]
-     * @throws Exception
-     * @throws InvalidConfigException
-     */
-    public static function getByCriteria(CriteriaInterface $criteria): array
-    {
-        $courses = static::connect('core_course_get_courses_by_field', $criteria->getItems());
-        return static::loadData($courses, 'courses');
+        return static::findAll(['category' => $categoryId]);
     }
 
     /**
@@ -178,7 +179,7 @@ class Course extends RestModel
      */
     public static function getById(int $id): ?static
     {
-        return static::getByCriteriaOne(new CourseCriteria(['id' => $id]));
+        return static::findOne(['id' => $id]);
     }
 
     /**
@@ -189,7 +190,7 @@ class Course extends RestModel
      */
     public static function getByIdNumber(int $idNumber): ?static
     {
-        return static::getByCriteriaOne(new CourseCriteria(['idnumber' => $idNumber]));
+        return static::findOne(['idnumber' => $idNumber]);
     }
 
     /**
@@ -200,7 +201,7 @@ class Course extends RestModel
      */
     public static function getByIds(array $ids): array
     {
-        return static::getByCriteria(new CourseCriteria(['ids' => implode(',', $ids)]));
+        return static::findAll(['ids' => implode(',', $ids)]);
     }
 
     /**
@@ -211,21 +212,21 @@ class Course extends RestModel
      */
     public static function getByShortname(string $shortname): ?static
     {
-        return static::getByCriteriaOne(new CourseCriteria(['shortname' => $shortname]));
+        return static::findOne(['shortname' => $shortname]);
     }
 
     /**
-     * @return CourseCategory|null
+     * @return Category|null
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public function getCategory(): ?CourseCategory
+    public function getCategory(): ?Category
     {
         if (!$this->categoryid) {
             return null;
         }
 
-        return CourseCategory::getById($this->categoryid);
+        return Category::getById($this->categoryid);
     }
 
     /**
@@ -292,6 +293,19 @@ class Course extends RestModel
     /**
      * @return array
      */
+    public function relations(): array
+    {
+        return [
+            'summaryfiles' => File::class,
+            'overviewfiles' => File::class,
+            'filters' => CourseFilter::class,
+            'courseformatoptions' => CourseFormatOption::class,
+        ];
+    }
+
+    /**
+     * @return array
+     */
     public function rules(): array
     {
         return [
@@ -311,58 +325,69 @@ class Course extends RestModel
             ], 'string'],
             [[
                 'enrollmentmethods', 'showactivitydates', 'showcompletionconditions', 'contacts', 'customfields',
-                'filters', 'courseformatoptions', 'summaryfiles', 'overviewfiles',
+                'filters', 'courseformatoptions', 'summaryfiles', 'overviewfiles', 'ids', 'category', 'sectionid',
             ], 'safe'],
         ];
     }
 
     /**
-     * @param int $userId
-     * @param int $roleId
-     * @return bool
-     * @throws Exception
-     * @throws InvalidConfigException
+     * @return string[]
      */
-    public function unEnrolUser(int $userId, int $roleId): bool
-    {
-        if (!$this->id) {
-            return false;
-        }
-
-        $enrolment = new Enrol([
-            'courseid' => $this->id,
-            'userid' => $userId,
-            'roleid' => $roleId,
-        ]);
-
-        return $enrolment->delete();
-    }
-
-    /**
-     * @return array
-     */
-    protected function relations(): array
+    public function saveAttributes(): array
     {
         return [
-            'summaryfiles' => File::class,
-            'overviewfiles' => File::class,
-            'filters' => CourseFilter::class,
-            'courseformatoptions' => CourseFormatOption::class,
+            'fullname',
+            'shortname',
+            'categoryid',
+            'idnumber',
+            'summary',
+            'summaryformat',
+            'format',
+            'showgrades',
+            'newsitems',
+            'startdate',
+            'enddate',
+            'numsections',
+            'maxbytes',
+            'showreports',
+            'visible',
+            'hiddensections',
+            'groupmode',
+            'groupmodeforce',
+            'defaultgroupingid',
+            'enablecompletion',
+            'completionnotify',
+            'lang',
         ];
     }
 
     /**
      * @return array[]
      */
-    protected function crudRules(): array
+    public static function services(): array
     {
-        $rule = new CourseRule($this->toArray());
-        $params = $rule->filterItems();
-
         return [
-            self::SCENARIO_CREATE => ['core_course_create_courses', ['courses' => [$params]]],
-            self::SCENARIO_DELETE => ['core_course_delete_courses', ['courseids' => [$this->id]]],
-            self::SCENARIO_UPDATE => ['core_course_update_courses', ['courses' => [$params]]],
+            self::SCENARIO_CREATE => ['core_course_create_courses'],
+            self::SCENARIO_DELETE => ['core_course_delete_courses', 'courseids'],
+            self::SCENARIO_FIND => ['core_course_get_courses_by_field'],
+            self::SCENARIO_UPDATE => ['core_course_update_courses'],
         ];
+    }
+
+    /**
+     * @param int $userId
+     * @return bool
+     * @throws Exception
+     * @throws InvalidConfigException
+     * @throws MethodNotAllowedHttpException
+     */
+    public function unEnrolUser(int $userId): bool
+    {
+        if (!$this->id) {
+            return false;
+        }
+
+        $enrolment = new Enrolment(['courseid' => $this->id, 'userid' => $userId]);
+        return $enrolment->delete();
     }
 }

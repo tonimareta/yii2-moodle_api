@@ -54,7 +54,7 @@ class File extends Model
     /**
      * @return string[]
      */
-    protected function relations(): array
+    public function relations(): array
     {
         return [
             'tags' =>FileTag::class,

@@ -2,18 +2,17 @@
 
 namespace tonimareta\moodle;
 
-use tonimareta\moodle\interfaces\CriteriaInterface;
-use tonimareta\moodle\interfaces\OptionInterface;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\httpclient\Exception;
 use yii\web\MethodNotAllowedHttpException;
 
-abstract class RestModel extends Model
+class RestModel extends Model
 {
     const SCENARIO_CREATE = 'create';
     const SCENARIO_DELETE = 'delete';
+    const SCENARIO_FIND = 'find';
     const SCENARIO_UPDATE = 'update';
 
     /**
@@ -37,6 +36,7 @@ abstract class RestModel extends Model
      * @return bool
      * @throws Exception
      * @throws InvalidConfigException
+     * @throws MethodNotAllowedHttpException
      */
     public function delete(): bool
     {
@@ -54,21 +54,9 @@ abstract class RestModel extends Model
             return false;
         }
 
-        $rules = static::crudRules();
+        $result = static::execute(self::SCENARIO_DELETE, [$this->{$pk}]);
 
-        if (empty($rules[self::SCENARIO_DELETE])) {
-            return false;
-        }
-
-        list($method, $params) = array_pad($rules[self::SCENARIO_DELETE], 2, null);
-
-        if (!$method) {
-            return false;
-        }
-
-        $result = static::connect($method, $params ?? []);
-
-        if (!$result) {
+        if (!is_array($result) && empty($result)) {
             return false;
         }
 
@@ -93,49 +81,68 @@ abstract class RestModel extends Model
     }
 
     /**
-     * @param CriteriaInterface $criteria
-     * @return array
+     * @param array $conditions
+     * @return static[]
      * @throws Exception
      * @throws InvalidConfigException
      */
-    abstract public static function getByCriteria(CriteriaInterface $criteria): array;
+    public static function findAll(array $conditions): array
+    {
+        $services = static::services();
+        $formName = static::modelName(true);
+        $method = $services[self::SCENARIO_FIND][0] ?? null;
+
+        if (!$method) {
+            return [];
+        }
+
+        $models = static::connect($method, $conditions);
+
+        if (!is_array($models)) {
+            return [];
+        }
+
+        $data = $models[$formName] ?? $models;
+
+        if (empty($data)) {
+            return [];
+        }
+
+        return static::loadData($data);
+    }
 
     /**
-     * @param CriteriaInterface $criteria
+     * @param array $condition
      * @return static|null
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public static function getByCriteriaOne(CriteriaInterface $criteria): ?static
+    public static function findOne(array $condition): ?static
     {
-        $models = static::getByCriteria($criteria);
+        $models = static::findAll($condition);
         return $models[0] ?? null;
     }
 
     /**
      * @param array $data
-     * @param string|null $formId
+     * @param string|null $formName
      * @return static[]
      */
-    public static function loadData(array $data, ?string $formId = null): array
+    public static function loadData(array $data, ?string $formName = null): array
     {
-        if ($formId && isset($data[$formId])) {
-            $data = $data[$formId];
+        if ($formName && isset($data[$formName])) {
+            $data = $data[$formName];
         }
 
-        return array_map(fn ($data) => new static($data), $data);
+        return array_map(fn($model) => new static($model), $data);
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function scenarios(): array
+    public function primaryKey(): string
     {
-        return ArrayHelper::merge(parent::scenarios(), [
-            self::SCENARIO_CREATE => [],
-            self::SCENARIO_DELETE => [],
-            self::SCENARIO_UPDATE => [],
-        ]);
+        return 'id';
     }
 
     /**
@@ -146,7 +153,7 @@ abstract class RestModel extends Model
      */
     public function save(): bool
     {
-        if (!$pk = static::primaryKey()) {
+        if (!$pk = $this->primaryKey()) {
             return false;
         }
 
@@ -157,51 +164,81 @@ abstract class RestModel extends Model
             return false;
         }
 
-        $rules = static::crudRules();
-
-        if (empty($rules[$scenario])) {
-            throw new MethodNotAllowedHttpException('Method not allowed.');
-        }
-
-        list($method, $params) = array_pad($rules[$scenario], 2, null);
-
-        if (!$method) {
-            throw new MethodNotAllowedHttpException("The {$method} not allowed.");
-        }
-
-        $models = static::connect($method, $params ?? []);
+        $fields = $this->scenarios()[$scenario] ?? [];
+        $conditions = $this->toArray($fields);
+        $models = static::execute($scenario, [$conditions]);
 
         if (!is_array($models)) {
             return !empty($models);
+        }
+
+        if (empty($models)) {
+            return true;
         }
 
         if (empty($models[0])) {
             return false;
         }
 
-        $this->setAttributes($models[0]);
-        $this->load($models[0]);
-
+        $this->setAttributes($models[0], false);
         return true;
     }
 
     /**
-     * @return false[]
+     * @return array
      */
-    protected function crudRules(): array
+    public function saveAttributes(): array
     {
-        return [
-            self::SCENARIO_CREATE => [],
-            self::SCENARIO_DELETE => [],
-            self::SCENARIO_UPDATE => [],
-        ];
+        return [];
     }
 
     /**
-     * @return string
+     * @return array
      */
-    protected static function primaryKey(): string
+    public function scenarios(): array
     {
-        return 'id';
+        $scenarios = parent::scenarios();
+        $saveAttributes = $this->saveAttributes();
+        $pk = $this->primaryKey();
+
+        $scenarios[self::SCENARIO_CREATE] = $saveAttributes;
+        $scenarios[self::SCENARIO_DELETE] = [$pk];
+        $scenarios[self::SCENARIO_FIND] = [];
+        $scenarios[self::SCENARIO_UPDATE] = ArrayHelper::merge([$pk], $saveAttributes);
+
+        return $scenarios;
+    }
+
+    /**
+     * @return array
+     */
+    public static function services(): array
+    {
+        return [];
+    }
+
+    /**
+     * @param string $scenario
+     * @param array $conditions
+     * @return mixed
+     * @throws Exception
+     * @throws InvalidConfigException
+     * @throws MethodNotAllowedHttpException
+     */
+    protected static function execute(string $scenario, array $conditions = []): mixed
+    {
+        $services = static::services();
+        list($method, $formName) = array_pad($services[$scenario] ?? [], 2, null);
+        $formName = $formName ?? static::modelName(true);
+
+        if (!$method) {
+            throw new MethodNotAllowedHttpException("The {$scenario} method not allowed.");
+        }
+
+        if (empty($conditions)) {
+            return false;
+        }
+
+        return static::connect($method, [$formName => array_filter($conditions)]);
     }
 }

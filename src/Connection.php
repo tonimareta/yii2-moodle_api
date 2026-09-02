@@ -79,6 +79,10 @@ class Connection extends Model
             return true;
         }
 
+        if (isset($data['warnings']) && empty($data['warnings'])) {
+            unset($data['warnings']);
+        }
+
         if (!empty($data['exception'])) {
             throw new Exception(implode(PHP_EOL, $data), 500);
         }
@@ -148,12 +152,13 @@ class Connection extends Model
      */
     protected function getData(): mixed
     {
+        $fullUrl = $this->url . $this->buildFullUrl();
         $request = $this->makeRequest();
         $response = $request->send();
         $this->reset();
 
         if (!$response->getIsOk()) {
-            throw new HttpException($response->getStatusCode(), 'Request for url: ' . $url . ' failed with data: ' . $response->getContent());
+            throw new HttpException($response->getStatusCode(), 'Request for url: ' . $fullUrl . ' failed with data: ' . $response->getContent());
         }
 
         return $response->getData();

@@ -163,11 +163,29 @@ class CourseModule extends RestModel
     }
 
     /**
+     * @return string[]
+     */
+    public function relations(): array
+    {
+        return [
+            'activitybadge' => ActivityBadge::class,
+            'completiondata' => CompletionData::class,
+            'dates' => MoodleDate::class,
+            'contents' => File::class,
+            'contentsinfo' => FileInfo::class,
+            'advancedgrading' => AdvancedGrading::class,
+            'outcomes' => Outcome::class,
+        ];
+    }
+
+    /**
      * @return array
      */
     public function rules(): array
     {
         return [
+            [['id'], 'required', 'on' => self::SCENARIO_DELETE],
+
             [[
                 'id', 'instance', 'contextid', 'visible', 'uservisible', 'visibleold', 'visibleoncoursepage',
                 'showdescription', 'course', 'section', 'sectionnum', 'module', 'branded', 'indent', 'noviewlink',
@@ -179,9 +197,6 @@ class CourseModule extends RestModel
                 'modplural', 'availability', 'onclick', 'afterlink', 'customdata', 'gradepass',
             ], 'string'],
             [[
-
-            ]],
-            [[
                 'activitybadge', 'completiondata', 'dates', 'contents', 'contentsinfo', 'advancedgrading', 'outcomes',
             ], 'safe'],
         ];
@@ -190,28 +205,10 @@ class CourseModule extends RestModel
     /**
      * @return array[]
      */
-    protected function crudRules(): array
+    public static function services(): array
     {
         return [
-            self::SCENARIO_CREATE => [],
-            self::SCENARIO_DELETE => ['core_course_delete_modules', ['cmids' => [$this->id]]],
-            self::SCENARIO_UPDATE => [],
-        ];
-    }
-
-    /**
-     * @return string[]
-     */
-    protected function relations(): array
-    {
-        return [
-            'activitybadge' => ActivityBadge::class,
-            'completiondata' => CompletionData::class,
-            'dates' => MoodleDate::class,
-            'contents' => File::class,
-            'contentsinfo' => FileInfo::class,
-            'advancedgrading' => AdvancedGrading::class,
-            'outcomes' => Outcome::class,
+            self::SCENARIO_DELETE => ['core_course_delete_modules', 'cmids'],
         ];
     }
 }

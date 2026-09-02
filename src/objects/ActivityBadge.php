@@ -30,7 +30,7 @@ class ActivityBadge extends Model
     /**
      * @return array
      */
-    protected function relations(): array
+    public function relations(): array
     {
         return [
             'badgeextraattributes' => BadgeExtraAttribute::class,
